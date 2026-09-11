@@ -31,7 +31,7 @@
   visible on/.style={alt={#1{}{invisible}}},
   alt/.code args={<#1>#2#3}{\alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}}},
   focus on/.style={alt={#1{draw=clay,line width=1.3pt}{}}},
-  glow on/.style={alt={#1{glow}{}}},
+  emphasis on/.style={alt={#1{draw=plum,line width=1.3pt,fill=plum!4}{}}},
 }
 
 % ---------- Standard diagram styles ----------
@@ -52,9 +52,6 @@
   neuron/.style={circle,minimum size=0.48cm,inner sep=0pt,line width=0.7pt,font=\scriptsize},
   mystery/.style={rectangle,rounded corners=5pt,draw=plum,line width=1.3pt,fill=white,text=plum,
                   font=\fontsize{24}{24}\fontseries{eb}\selectfont},
-  glow/.style={preaction={draw=plum,draw opacity=0.06,line width=16pt},
-               preaction={draw=plum,draw opacity=0.09,line width=10pt},
-               preaction={draw=plum,draw opacity=0.14,line width=5pt}},
 }
 
 % ---------- Beamer theme ----------
@@ -319,7 +316,10 @@
 
   % storage bar
   \node[anchor=west,font=\footnotesize\bfseries,text=ink] at (5.9,4.12) {Storage};
-  \node[anchor=east,font=\footnotesize,text=slate] at (14.6,4.12) {127.6 GB of 128 GB used};
+  \only<1>{\node[anchor=east,font=\footnotesize,text=slate] at (14.6,4.12)
+    {127.6 GB of 128 GB used};}
+  \only<2->{\node[anchor=east,font=\footnotesize,text=slate] at (14.6,4.12)
+    {127.6 GB used \hspace{0.35cm} \textcolor{clay}{\textbf{only 0.4 GB free}}};}
   \begin{scope}[focus on=<2>]
     \fill[steel!55] (5.9,3.45) rectangle (12.9,3.85);
     \fill[navy!35] (12.9,3.45) rectangle (13.9,3.85);
@@ -330,7 +330,6 @@
   \foreach \c/\t/\x in {steel!55/Photos \, 112 GB/5.9, navy!35/Apps \, 10 GB/8.3, slate!30/System \, 5.6 GB/10.3}{
     \fill[\c] (\x,3.05) rectangle ++(0.22,0.22);
     \node[anchor=west,font=\scriptsize,text=slate] at (\x+0.28,3.16) {\t};}
-  \node[anchor=east,font=\scriptsize\bfseries,text=clay,visible on=<2->] at (14.6,3.16) {only 0.4 GB free};
 
   % options (step 3)
   \begin{scope}[visible on=<3->]
@@ -349,10 +348,10 @@
 % =================================================================
 %  PAGE 2 — Smarter solution: compress
 % =================================================================
-\begin{frame}{A Smarter Solution: Compress}
+\begin{frame}{Compression Saves Storage}
 \begin{canvas}
   % ---------- flow chart ----------
-  \begin{scope}[visible on=<1->]
+  \begin{scope}
     \node[draw=slate!60,line width=0.7pt,rounded corners=3pt,fill=white,minimum width=2.9cm,minimum height=0.8cm,
           font=\footnotesize,text=ink] (fa) at (4.1,6.6) {\hspace{0.45cm}Photo \textbf{(2.8 MB)}};
     \node[draw=slate!60,line width=0.7pt,rounded corners=3pt,fill=white,minimum width=2.9cm,minimum height=0.8cm,
@@ -363,28 +362,28 @@
         \fill[slate!70] (0.03,0.03) -- (0.15,0.2) -- (0.24,0.1) -- (0.3,0.16) -- (0.39,0.03) -- cycle;
         \fill[slate!70] (0.3,0.25) circle (0.035);
       \end{scope}}
-    \node[mystery,minimum width=1.5cm,minimum height=0.9cm,font=\Large\fontseries{eb}\selectfont,glow on=<3->]
+    \node[mystery,minimum width=1.5cm,minimum height=0.9cm,font=\Large\fontseries{eb}\selectfont,emphasis on=<3->]
          (fm) at (8,6.6) {?};
     \draw[arr] (fa) -- (fm);
     \draw[arr] (fm) -- (fb);
   \end{scope}
 
   % ---------- real photos ----------
-  \begin{scope}[visible on=<2->]
+  \only<2->{\begin{scope}
     \node[inner sep=0pt] (po) at (3.9,3.95) {\includegraphics[width=4.5cm]{photo_original.jpg}};
     \draw[photo] (po.south west) rectangle (po.north east);
     \node[inner sep=0pt] (pc) at (12.1,3.95) {\includegraphics[width=4.5cm]{photo_compressed.jpg}};
     \draw[photo] (pc.south west) rectangle (pc.north east);
-    \node[mystery,minimum width=1.9cm,minimum height=1.5cm,glow on=<3->] (pm) at (8,3.95) {?};
+    \node[mystery,minimum width=1.9cm,minimum height=1.5cm,emphasis on=<3->] (pm) at (8,3.95) {?};
     \draw[arr] (po) -- (pm);
     \draw[arr] (pm) -- (pc);
     \node[lbl,anchor=north] at (po.south) {original \;\textbullet\; \textbf{2.8 MB}};
     \node[lbl,anchor=north] at (pc.south) {compressed \;\textbullet\; \textbf{180 KB} \;\textcolor{clay}{($\approx$15$\times$ smaller)}};
-  \end{scope}
+  \end{scope}}
 
   % ---------- question ----------
-  \node[visible on=<3->,font=\normalsize,text=ink,align=center] at (8,1.3)
-       {Same photo, much less storage. \; What goes inside the \textbf{\textcolor{plum}{mysterious middle box}}?};
+  \only<3->{\node[font=\normalsize,text=ink,align=center] at (8,1.3)
+       {Same photo, much less storage. \; What goes inside the \textbf{\textcolor{plum}{mysterious middle box}}?};}
 \end{canvas}
 \end{frame}
 
@@ -401,7 +400,7 @@
   \node[lbl,anchor=north] at (pc.south) {180 KB};
 
   % the box: mystery (step 1) -> autoencoder (step 2+)
-  \node[mystery,minimum width=3.9cm,minimum height=2.6cm,glow on=<1>,
+  \node[mystery,minimum width=3.9cm,minimum height=2.6cm,emphasis on=<1>,
         alt=<2->{draw=navy,line width=1pt}{}] (box) at (8,4.5) {};
   \draw[arr] (po) -- (box);
   \draw[arr] (box) -- (pc);
@@ -514,7 +513,7 @@
   \node[anchor=north west,text width=6.2cm,align=left,font=\normalsize,text=ink,visible on=<2->] at (8.95,5.2) {%
     Similar images land close together: the points form separate \textbf{\textcolor{navy}{islands}}.};
   \node[anchor=north west,text width=6.2cm,align=left,font=\normalsize,text=ink,visible on=<3->] at (8.95,3.5) {%
-    Between the islands there are \textbf{\textcolor{clay}{large empty gaps}}: no training image was ever placed there.};
+    Large \textbf{\textcolor{clay}{empty gaps}} remain between the islands. The decoder has not seen training examples from these regions.};
 \end{canvas}
 \end{frame}
 
@@ -557,10 +556,10 @@
 
   % idea box
   \begin{scope}[visible on=<3->]
-    \draw[fill=slate!7,draw=navy!40,line width=0.6pt,rounded corners=4pt] (8.95,0.92) rectangle (15.05,2.5);
-    \node[anchor=north west,text width=5.85cm,align=left,font=\footnotesize,text=ink] at (9.05,2.44) {%
-      What if every image were stored as a \textbf{\textcolor{navy}{distribution}} instead of one exact point?\\[2pt]
-      $\Rightarrow$ the core idea behind the\\ \textbf{\textcolor{clay}{Variational Autoencoder}}};
+    \draw[fill=slate!7,draw=navy!40,line width=0.6pt,rounded corners=4pt] (8.95,0.98) rectangle (15.05,2.5);
+    \node[anchor=north west,text width=5.85cm,align=left,font=\footnotesize,text=ink] at (9.08,2.39) {%
+      Suppose the encoder maps each image to a \textbf{\textcolor{navy}{distribution}} instead of one point.\\[3pt]
+      \textbf{\textcolor{clay}{That is the central idea behind a VAE.}}};
   \end{scope}
 \end{canvas}
 \end{frame}
@@ -583,7 +582,7 @@
       \node[star,star points=5,star point ratio=2.3,fill=clay,inner sep=1.4pt] (new) at (-0.55,0.35) {};
       \draw[clay,line width=0.6pt] (new) -- (-2.2,-2.45)
         node[fill=white,draw=clay,rounded corners=2pt,inner sep=2.5pt,font=\scriptsize,text=clay!80!black,anchor=north west]
-        at (-3.55,-2.1) {new point $\rightarrow$ realistic image};}
+        at (-3.55,-2.1) {sampled point $\rightarrow$ plausible image};}
   \end{scope}
 
   % ---------- morph: one image -> one point / one cloud ----------
@@ -620,7 +619,7 @@
   \node[anchor=north west,text width=5.9cm,align=left,font=\footnotesize,text=ink] at (9.15,2.55) {%
     \only<1>{Right now every image is a single point, with empty gaps in between.}%
     \only<2>{Each image now occupies a \textbf{small area} instead of a single point.}%
-    \only<3->{The areas overlap, so \textbf{the gaps disappear}: we can pick a new point from that area and still generate a realistic new image.}};
+    \only<3->{The distributions overlap, which \textbf{reduces empty gaps}. Nearby samples are more likely to decode into realistic images.}};
 \end{canvas}
 \end{frame}
 
@@ -676,7 +675,7 @@
       \node[anchor=east,font=\scriptsize,text=ink] at (7.3,\y) {\name};
       \numline{8.75,\y-0.05}{2.4}
       \gauss{8.75,\y-0.05}{2.4}{\m}{\sg}{\h}}
-    \node[lbl] at (8.0,1.75) {latent attributes: one distribution each};
+    \node[lbl] at (8.0,1.75) {illustrative latent attributes: one distribution each};
   \end{scope}
 
   \begin{scope}[visible on=<3->]
@@ -693,7 +692,7 @@
 % =================================================================
 %  PAGE 10 — Sample -> reconstruct  (senior slide 29)
 % =================================================================
-\begin{frame}{VAE Simplified: Sample, then Decode}
+\begin{frame}{VAE Simplified: Sampling and Decoding}
 \begin{canvas}
   % compact latent distributions with two samples
   \draw[slate!45,line width=0.6pt,rounded corners=8pt,fill=white] (0.95,1.85) rectangle (4.95,7.15);
@@ -744,7 +743,7 @@
 % =================================================================
 %  PAGE 11 — Hand-off to Member 2  (senior slide 30)
 % =================================================================
-\begin{frame}{Up Next: The VAE Workflow}
+\begin{frame}{The VAE Workflow}
 \begin{canvas}
   \node[anchor=west,font=\footnotesize,text=slate] at (0.95,6.95)
        {So far: \; \textcolor{steel}{\textbf{Autoencoder}} = one point per image \quad\textbullet\quad
