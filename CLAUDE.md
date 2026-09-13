@@ -1,7 +1,7 @@
 # VAE Presentation — Theme & Style Guide
 
 Group presentation on **Variational Autoencoders** (CSE 200, BUET). 3 members, ~3 minutes each.
-Built in **LaTeX Beamer + TikZ**. The reference implementation of the theme is `demo.tex` — copy its preamble for every new slide file.
+Built in **LaTeX Beamer + TikZ**. `demo.tex` was the original reference implementation of the theme; `part1.tex` and `part2.tex` have since diverged from it (font, header) and are now the current source of truth — copy their preamble for every new slide file, not `demo.tex`'s.
 
 Goal: show off TikZ drawings and Beamer features (overlays, step-by-step builds), while keeping diagrams **muted and academic**.
 
@@ -39,7 +39,7 @@ Colour meaning stays consistent across all members' slides:
 ## 2. Typography & layout
 
 - `\documentclass[aspectratio=169,11pt]{beamer}` — 16:9, page is 16 × 9 cm.
-- Font: `\usepackage[sfdefault]{FiraSans}` + `\usepackage[T1]{fontenc}`. Frame titles use `\fontseries{eb}` (ExtraBold) in `navy`.
+- Font: `\usepackage{plex-serif}` + `\renewcommand{\familydefault}{\rmdefault}` + `\usepackage[T1]{fontenc}` (IBM Plex Serif). This face has no true ExtraBold cut, so `\fontseries{eb}` silently substitutes its Bold weight (harmless "Font shape ... eb ... undefined" warning at compile time — expected, not a bug). Frame titles are set in this bold weight, in `white`, inside the navy header band (see Content frames below).
 - Math: `amsmath, amssymb, bm`. Bold vectors with `\bm{\mu}`, `\bm{\sigma}`. Write `D_{\text{KL}}` (not `\mathrm{KL}`, which falls back to a bitmap serif).
 - Notation (use everywhere): input `x`, reconstruction `\hat{x}`, latent `z`, encoder `q_\phi(z\mid x)`, decoder `p_\theta(x\mid z)`, prior `p(z)=\mathcal{N}(0,I)`, noise `\epsilon\sim\mathcal{N}(0,I)`, reparameterisation `z=\bm{\mu}+\bm{\sigma}\odot\epsilon`.
 - Navigation symbols off.
@@ -48,8 +48,8 @@ Colour meaning stays consistent across all members' slides:
 `[plain]` frame, no background/footline. Three dots top-left and bottom-right (`navy, sky, teal`), diagonal corner stripes top-right and bottom-left (`navy, sky, teal`-thin, `steel`), big two-line ExtraBold title on the left, a circular TikZ "latent space" medallion on the right. Only the first slide of the whole deck uses this.
 
 ### Content frames
-- **Frame title**: ExtraBold navy, followed by a short `teal` bar + a tiny `sky` bar underline.
-- **Background**: three thin corner stripes top-right (`navy, sky, teal`).
+- **Frame title**: full-width `navy` header band across the top of the frame (via `\setbeamertemplate{frametitle}`), bold white title text left-inset, with a thin rule underneath split `steel` (left) / `sky` (across the remainder) — this mirrors the footline below, just flipped to the top.
+- **Background**: plain `paper`, no corner stripe. (The diagonal corner-stripe decoration is used only on the title slide — see above — it would visually clash with the solid header band.)
 - **Footline**: use the finalized senior-inspired information bar from `demo.tex` on every content frame. It has a `navy` band, a thin top rule split into `steel` on the left and `sky` across the remainder, subtle white separators, and white labels: `B2 • GROUP 2` (left), `VARIATIONAL AUTOENCODER` (centre), and `CSE 200` (right). Put `current/total` frame numbers in a small `steel` badge at the far right. The title slide stays plain with no footer. Never use `teal` in the footer.
 - **Blocks / formula boxes**: `block body` background `slate!7`, rounded, no shadow.
 

@@ -6,7 +6,8 @@
 % =================================================================
 \documentclass[aspectratio=169,11pt]{beamer}
 
-\usepackage[sfdefault]{FiraSans}
+\usepackage{plex-serif}
+\renewcommand{\familydefault}{\rmdefault}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb,bm}
 \usepackage{pifont}
@@ -70,21 +71,17 @@
 \setbeamertemplate{background}{%
   \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
     \clip (0,0) rectangle (16,9);
-    \stripeTR{14.35}{0.45}{navy}
-    \stripeTR{15.05}{0.55}{sky}
-    \stripeTR{15.85}{0.12}{teal}
   \end{tikzpicture}}
 
 \setbeamertemplate{frametitle}{%
-  \vspace*{0.2cm}%
-  \begin{beamercolorbox}[wd=\paperwidth,leftskip=0.9cm]{frametitle}
-    {\usebeamercolor[fg]{structure}\fontseries{eb}\selectfont\Large\insertframetitle}\par
-    \vspace{3pt}
-    \begin{tikzpicture}
-      \fill[teal] (0,0) rectangle (1.4,0.09);
-      \fill[sky] (1.55,0) rectangle (1.95,0.09);
-    \end{tikzpicture}
-  \end{beamercolorbox}}
+  \begin{tikzpicture}[remember picture,overlay,shift={(current page.north west)}]
+    \fill[navy] (0,0) rectangle (16,-1.05);
+    \fill[steel] (0,-1.05) rectangle (3.55,-1.11);
+    \fill[sky]  (3.55,-1.05) rectangle (16,-1.11);
+    \node[anchor=west,text=white,font=\fontseries{eb}\selectfont\Large] at (0.72,-0.525)
+      {\insertframetitle};
+  \end{tikzpicture}
+  \vspace*{0.78cm}}
 
 \setbeamertemplate{footline}{%
   \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
