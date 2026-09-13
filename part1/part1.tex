@@ -18,20 +18,20 @@
 \definecolor{navy}{HTML}{0E237A}
 \definecolor{steel}{HTML}{4D6FAD}
 \definecolor{sky}{HTML}{5DADF5}
-\definecolor{clay}{HTML}{A86A52}
+\definecolor{teal}{HTML}{3F8C8A}
 \definecolor{slate}{HTML}{5B6475}
 \definecolor{paper}{HTML}{FBFAF7}
 \definecolor{ink}{HTML}{1C2233}
-% muted purple for the "mystery box" = a mix of two palette colours (no new hue)
-\colorlet{plum}{navy!55!clay}
+% deeper blue-teal for the "mystery box" = a mix of two palette colours (no new hue)
+\colorlet{deepteal}{navy!55!teal}
 
 % ---------- TikZ overlay helpers ----------
 \tikzset{
   invisible/.style={opacity=0,text opacity=0},
   visible on/.style={alt={#1{}{invisible}}},
   alt/.code args={<#1>#2#3}{\alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}}},
-  focus on/.style={alt={#1{draw=clay,line width=1.3pt}{}}},
-  emphasis on/.style={alt={#1{draw=plum,line width=1.3pt,fill=plum!4}{}}},
+  focus on/.style={alt={#1{draw=teal,line width=1.3pt}{}}},
+  emphasis on/.style={alt={#1{draw=deepteal,line width=1.3pt,fill=deepteal!4}{}}},
 }
 
 % ---------- Standard diagram styles ----------
@@ -42,7 +42,7 @@
   block/.style={trapezium,trapezium stretches=true,minimum width=2.4cm,minimum height=1.55cm,
                 line width=0.8pt,font=\bfseries},
   enc/.style={block,shape border rotate=270,fill=steel!12,draw=steel,text=navy},
-  dec/.style={block,shape border rotate=90,fill=clay!10,draw=clay,text=clay!70!black},
+  dec/.style={block,shape border rotate=90,fill=teal!10,draw=teal,text=teal!70!black},
   param/.style={rectangle,rounded corners=2pt,minimum width=0.95cm,minimum height=0.6cm,
                 draw=steel,line width=0.8pt,fill=white,text=navy,font=\normalsize},
   op/.style={circle,draw=slate,line width=0.8pt,fill=white,inner sep=1pt},
@@ -50,14 +50,14 @@
   chip/.style={rectangle,rounded corners=3pt,line width=0.8pt,inner xsep=7pt,inner ysep=4pt,
                font=\footnotesize,fill=white},
   neuron/.style={circle,minimum size=0.48cm,inner sep=0pt,line width=0.7pt,font=\scriptsize},
-  mystery/.style={rectangle,rounded corners=5pt,draw=plum,line width=1.3pt,fill=white,text=plum,
+  mystery/.style={rectangle,rounded corners=5pt,draw=deepteal,line width=1.3pt,fill=white,text=deepteal,
                   font=\fontsize{24}{24}\fontseries{eb}\selectfont},
 }
 
 % ---------- Beamer theme ----------
 \setbeamercolor{background canvas}{bg=paper}
 \setbeamercolor{normal text}{fg=ink}
-\setbeamercolor{alerted text}{fg=clay}
+\setbeamercolor{alerted text}{fg=teal}
 \setbeamercolor{structure}{fg=navy}
 \setbeamercolor{block title}{bg=navy,fg=white}
 \setbeamercolor{block body}{bg=slate!7,fg=ink}
@@ -72,7 +72,7 @@
     \clip (0,0) rectangle (16,9);
     \stripeTR{14.35}{0.45}{navy}
     \stripeTR{15.05}{0.55}{sky}
-    \stripeTR{15.85}{0.12}{clay}
+    \stripeTR{15.85}{0.12}{teal}
   \end{tikzpicture}}
 
 \setbeamertemplate{frametitle}{%
@@ -81,18 +81,29 @@
     {\usebeamercolor[fg]{structure}\fontseries{eb}\selectfont\Large\insertframetitle}\par
     \vspace{3pt}
     \begin{tikzpicture}
-      \fill[clay] (0,0) rectangle (1.4,0.09);
+      \fill[teal] (0,0) rectangle (1.4,0.09);
       \fill[sky] (1.55,0) rectangle (1.95,0.09);
     \end{tikzpicture}
   \end{beamercolorbox}}
 
 \setbeamertemplate{footline}{%
   \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
-    \node[anchor=west,text=steel,font=\scriptsize] at (0.9,0.42) {Variational Autoencoder \,\textbar\, CSE 200};
-    \fill[navy] (14.35,0.42) circle (0.09);
-    \fill[sky]  (14.65,0.42) circle (0.09);
-    \fill[clay] (14.95,0.42) circle (0.09);
-    \node[text=navy,font=\scriptsize\bfseries] at (15.4,0.42) {\insertframenumber};
+    % Finalized senior-inspired information bar: footer uses blues only.
+    \fill[navy] (0,0) rectangle (16,0.58);
+    \fill[steel] (0,0.58) rectangle (3.55,0.64);
+    \fill[sky]  (3.55,0.58) rectangle (16,0.64);
+    \draw[white,opacity=0.22,line width=0.45pt]
+      (3.55,0.10) -- (3.55,0.48)
+      (12.55,0.10) -- (12.55,0.48);
+    \node[anchor=west,text=white,font=\scriptsize\bfseries] at (0.72,0.29)
+      {B2 \;\textbullet\; GROUP 2};
+    \node[text=white,font=\scriptsize\bfseries] at (8.05,0.29)
+      {VARIATIONAL AUTOENCODER};
+    \node[anchor=east,text=white,font=\scriptsize] at (14.55,0.29)
+      {CSE 200};
+    \node[fill=steel,rounded corners=1.5pt,inner xsep=4.5pt,inner ysep=1.6pt,
+          text=white,font=\tiny\bfseries] at (15.35,0.29)
+      {\insertframenumber/\inserttotalframenumber};
   \end{tikzpicture}}
 
 % ---------- Page canvas: draw in page coordinates (16 x 9 cm) ----------
@@ -112,10 +123,10 @@
   \pgfmathsetseed{4242}%
   \foreach \cx/\cy/\sx/\sy/\rot/\col in {
       -2.35/ 1.55/0.34/0.20/ 20/navy,
-      -0.25/ 1.85/0.20/0.40/-25/clay,
+      -0.25/ 1.85/0.20/0.40/-25/teal,
        2.20/ 1.20/0.40/0.22/ 40/steel,
       -2.05/-1.35/0.30/0.28/  0/slate,
-       0.60/-0.45/0.26/0.36/ 60/clay!55!white,
+       0.60/-0.45/0.26/0.36/ 60/teal!55!white,
        2.40/-1.65/0.44/0.19/-15/steel!55!white}{%
     \foreach \k in {1,...,22}{%
       \pgfmathsetmacro\rr{min(2.1,sqrt(-2*ln(max(rnd,0.005))))}%
@@ -193,7 +204,7 @@
     \draw[slate!50,line width=0.5pt] (-0.6,-0.6) rectangle (0.6,0.6);
   \end{scope}}
 % the recurring bearded person used on the VAE slides
-\newcommand{\person}[2]{\face{#1}{#2}{0.75}{clay!55!white}{slate!55!ink}{3}{steel!10}{steel!60}}
+\newcommand{\person}[2]{\face{#1}{#2}{0.75}{teal!55!white}{slate!55!ink}{3}{steel!10}{steel!60}}
 
 % garbled decoder output (a "meaningless" image)
 \newcommand{\garbled}[2]{%
@@ -228,14 +239,14 @@
   \clip (0,0) rectangle (16,9);
   \stripeTR{11.6}{0.55}{navy}
   \stripeTR{12.45}{0.95}{sky}
-  \stripeTR{13.7}{0.14}{clay}
+  \stripeTR{13.7}{0.14}{teal}
   \stripeTR{14.15}{0.75}{steel}
   \stripeTR{15.2}{0.3}{navy}
   \stripeBL{3.9}{0.6}{navy}
   \stripeBL{3.05}{0.9}{sky}
-  \stripeBL{2.65}{0.14}{clay}
+  \stripeBL{2.65}{0.14}{teal}
   \stripeBL{1.85}{0.6}{steel}
-  \foreach \c [count=\i] in {navy,sky,clay}{
+  \foreach \c [count=\i] in {navy,sky,teal}{
     \fill[\c] (0.35+0.62*\i,8.2) circle (0.22);
     \fill[\c] (12.9+0.62*\i,0.75) circle (0.22);
   }
@@ -248,7 +259,7 @@
       \draw[white,opacity=0.10] (C) circle (\r);
     \draw[white,opacity=0.18] ($(C)+(-2.6,0)$) -- ++(5.2,0) ($(C)+(0,-2.6)$) -- ++(0,5.2);
     \pgfmathsetseed{7}
-    \foreach \mx/\my/\col in {-0.8/0.6/clay!55!white, 0.9/0.4/sky, 0.0/-0.9/white}{
+    \foreach \mx/\my/\col in {-0.8/0.6/teal!55!white, 0.9/0.4/sky, 0.0/-0.9/white}{
       \foreach \k in {1,...,55}{
         \pgfmathsetmacro\rr{0.42*sqrt(-2*ln(max(rnd,0.02)))}
         \pgfmathsetmacro\tt{360*rnd}
@@ -259,14 +270,14 @@
     }
   \end{scope}
   \node[font=\scriptsize,text=steel] at ($(C)+(0,-3.0)$) {latent space $z \sim \mathcal{N}(\bm{\mu},\bm{\sigma}^2)$};
-  \node[anchor=west,font=\small\bfseries,text=clay] at (1.0,6.55) {CSE 200 \;\textbullet\; Group Presentation};
+  \node[anchor=west,font=\small\bfseries,text=teal] at (1.0,6.55) {CSE 200 \;\textbullet\; B2 \;\textbullet\; Group 2};
   \node[anchor=north west,text=navy,align=left,font=\fontsize{32}{35}\fontseries{eb}\selectfont]
        at (0.9,6.3) {VARIATIONAL\\AUTOENCODER};
-  \fill[clay] (1.0,3.55) rectangle ++(1.6,0.12);
+  \fill[teal] (1.0,3.55) rectangle ++(1.6,0.12);
   \fill[sky]  (2.75,3.55) rectangle ++(0.45,0.12);
   \node[anchor=west,text=steel,font=\large] at (0.95,3.0) {Learning to generate, not just compress};
   \node[anchor=west,text=ink,font=\small] at (1.0,2.2) {Presented by \textbf{Member 1} \,\textbullet\, \textbf{Member 2} \,\textbullet\, \textbf{Member 3}};
-  \node[anchor=west,text=clay,font=\footnotesize\itshape] at (1.0,1.72) {Department of CSE, BUET};
+  \node[anchor=west,text=teal,font=\footnotesize\itshape] at (1.0,1.72) {Department of CSE, BUET};
 \end{tikzpicture}
 \end{frame}
 }
@@ -290,7 +301,7 @@
   \fill[ink,rounded corners=2pt] (2.8,6.93) rectangle (3.3,7.02);
   \node[anchor=west,font=\tiny\bfseries,text=ink] at (1.68,6.97) {9:41};
   \draw[ink,line width=0.4pt] (4.05,6.92) rectangle (4.33,7.02);
-  \fill[clay] (4.07,6.94) rectangle (4.1,7.0);
+  \fill[teal] (4.07,6.94) rectangle (4.1,7.0);
   \node[anchor=west,font=\scriptsize\bfseries,text=ink] at (1.66,6.6) {Photos};
   \node[anchor=east,font=\tiny,text=slate] at (4.46,6.6) {20,000 items};
   \fill[slate!60,rounded corners=1pt] (2.6,1.3) rectangle (3.5,1.36);
@@ -298,13 +309,13 @@
   % ---------- storage alert (step 2) ----------
   \begin{scope}[visible on=<2->]
     \fill[white,rounded corners=5pt] (1.78,3.15) rectangle (4.32,5.35);
-    \draw[clay,line width=0.8pt,rounded corners=5pt] (1.78,3.15) rectangle (4.32,5.35);
-    \fill[clay] (3.05,5.0) -- ++(-0.2,-0.35) -- ++(0.4,0) -- cycle;
+    \draw[teal,line width=0.8pt,rounded corners=5pt] (1.78,3.15) rectangle (4.32,5.35);
+    \fill[teal] (3.05,5.0) -- ++(-0.2,-0.35) -- ++(0.4,0) -- cycle;
     \node[font=\tiny\bfseries,text=white] at (3.05,4.77) {!};
     \node[font=\scriptsize\bfseries,text=ink] at (3.05,4.38) {Storage Almost Full};
     \node[font=\tiny,text=slate,align=center] at (3.05,4.0) {127.6 GB of 128 GB used};
     \fill[slate!15,rounded corners=1pt] (2.05,3.62) rectangle (4.05,3.72);
-    \fill[clay,rounded corners=1pt] (2.05,3.62) rectangle (4.0,3.72);
+    \fill[teal,rounded corners=1pt] (2.05,3.62) rectangle (4.0,3.72);
     \node[font=\tiny\bfseries,text=steel] at (3.05,3.35) {Manage Storage};
   \end{scope}
 
@@ -312,21 +323,21 @@
   \node[anchor=base west,text=navy,font=\fontsize{38}{38}\fontseries{eb}\selectfont] (num) at (5.85,5.95) {20,000};
   \node[anchor=base west,text=steel,font=\Large] at ($(num.base east)+(0.15,0)$) {photos};
   \node[anchor=north west,text width=8.6cm,align=left,font=\normalsize,text=ink] at (5.9,5.55)
-       {Imagine your phone has \textbf{20,000 photos}, but the storage is \textcolor{clay}{\textbf{almost full}}.};
+       {Imagine your phone has \textbf{20,000 photos}, but the storage is \textcolor{teal}{\textbf{almost full}}.};
 
   % storage bar
   \node[anchor=west,font=\footnotesize\bfseries,text=ink] at (5.9,4.12) {Storage};
   \only<1>{\node[anchor=east,font=\footnotesize,text=slate] at (14.6,4.12)
     {127.6 GB of 128 GB used};}
   \only<2->{\node[anchor=east,font=\footnotesize,text=slate] at (14.6,4.12)
-    {127.6 GB used \hspace{0.35cm} \textcolor{clay}{\textbf{only 0.4 GB free}}};}
+    {127.6 GB used \hspace{0.35cm} \textcolor{teal}{\textbf{only 0.4 GB free}}};}
   \begin{scope}[focus on=<2>]
     \fill[steel!55] (5.9,3.45) rectangle (12.9,3.85);
     \fill[navy!35] (12.9,3.45) rectangle (13.9,3.85);
     \fill[slate!30] (13.9,3.45) rectangle (14.55,3.85);
     \draw[slate!60,line width=0.6pt,rounded corners=2pt] (5.9,3.45) rectangle (14.6,3.85);
   \end{scope}
-  \draw[clay,line width=1.3pt,rounded corners=2pt,visible on=<2>] (5.9,3.45) rectangle (14.6,3.85);
+  \draw[teal,line width=1.3pt,rounded corners=2pt,visible on=<2>] (5.9,3.45) rectangle (14.6,3.85);
   \foreach \c/\t/\x in {steel!55/Photos \, 112 GB/5.9, navy!35/Apps \, 10 GB/8.3, slate!30/System \, 5.6 GB/10.3}{
     \fill[\c] (\x,3.05) rectangle ++(0.22,0.22);
     \node[anchor=west,font=\scriptsize,text=slate] at (\x+0.28,3.16) {\t};}
@@ -337,10 +348,10 @@
     \node[anchor=west,font=\Large,text=slate] at (6.1,1.85) {\xmark};
     \node[anchor=west,align=left,text width=3.15cm,font=\footnotesize,text=slate] at (6.65,1.85)
          {\textbf{Delete memories?}\\{\scriptsize not ideal: once gone, they're gone forever}};
-    \draw[clay,line width=1.1pt,rounded corners=4pt,fill=white] (10.45,1.15) rectangle (14.6,2.55);
-    \node[anchor=west,font=\Large,text=clay] at (10.65,1.85) {\cmark};
+    \draw[teal,line width=1.1pt,rounded corners=4pt,fill=white] (10.45,1.15) rectangle (14.6,2.55);
+    \node[anchor=west,font=\Large,text=teal] at (10.65,1.85) {\cmark};
     \node[anchor=west,align=left,text width=3.15cm,font=\footnotesize,text=ink] at (11.2,1.85)
-         {\textbf{\textcolor{clay}{A smarter solution}}\\{\scriptsize keep every photo, but use far less space}};
+         {\textbf{\textcolor{teal}{A smarter solution}}\\{\scriptsize keep every photo, but use far less space}};
   \end{scope}
 \end{canvas}
 \end{frame}
@@ -378,12 +389,12 @@
     \draw[arr] (po) -- (pm);
     \draw[arr] (pm) -- (pc);
     \node[lbl,anchor=north] at (po.south) {original \;\textbullet\; \textbf{2.8 MB}};
-    \node[lbl,anchor=north] at (pc.south) {compressed \;\textbullet\; \textbf{180 KB} \;\textcolor{clay}{($\approx$15$\times$ smaller)}};
+    \node[lbl,anchor=north] at (pc.south) {compressed \;\textbullet\; \textbf{180 KB} \;\textcolor{teal}{($\approx$15$\times$ smaller)}};
   \end{scope}}
 
   % ---------- question ----------
   \only<3->{\node[font=\normalsize,text=ink,align=center] at (8,1.3)
-       {Same photo, much less storage. \; What goes inside the \textbf{\textcolor{plum}{mysterious middle box}}?};}
+       {Same photo, much less storage. \; What goes inside the \textbf{\textcolor{deepteal}{mysterious middle box}}?};}
 \end{canvas}
 \end{frame}
 
@@ -404,27 +415,27 @@
         alt=<2->{draw=navy,line width=1pt}{}] (box) at (8,4.5) {};
   \draw[arr] (po) -- (box);
   \draw[arr] (box) -- (pc);
-  \node[visible on=<1>,text=plum,font=\fontsize{40}{40}\fontseries{eb}\selectfont] at (box) {?};
+  \node[visible on=<1>,text=deepteal,font=\fontsize{40}{40}\fontseries{eb}\selectfont] at (box) {?};
 
   \begin{scope}[visible on=<2->]
     \node[text=navy,font=\large\fontseries{eb}\selectfont] at (8,5.3) {Autoencoder};
     % mini encoder - code - decoder icon
     \fill[steel!12] (6.55,4.85) -- (7.65,4.45) -- (7.65,3.95) -- (6.55,3.55) -- cycle;
     \draw[steel,line width=0.8pt] (6.55,4.85) -- (7.65,4.45) -- (7.65,3.95) -- (6.55,3.55) -- cycle;
-    \fill[clay!10] (9.45,4.85) -- (8.35,4.45) -- (8.35,3.95) -- (9.45,3.55) -- cycle;
-    \draw[clay,line width=0.8pt] (9.45,4.85) -- (8.35,4.45) -- (8.35,3.95) -- (9.45,3.55) -- cycle;
+    \fill[teal!10] (9.45,4.85) -- (8.35,4.45) -- (8.35,3.95) -- (9.45,3.55) -- cycle;
+    \draw[teal,line width=0.8pt] (9.45,4.85) -- (8.35,4.45) -- (8.35,3.95) -- (9.45,3.55) -- cycle;
     \node[rectangle,fill=navy!8,draw=navy,line width=0.8pt,minimum width=0.42cm,minimum height=0.5cm,
           inner sep=0pt,font=\scriptsize,text=navy] at (8,4.2) {$z$};
     \draw[slate,line width=0.6pt,->,>={Stealth[length=1.3mm]}] (7.65,4.2) -- (7.79,4.2);
     \draw[slate,line width=0.6pt,->,>={Stealth[length=1.3mm]}] (8.21,4.2) -- (8.35,4.2);
     \node[font=\tiny,text=steel] at (7.0,3.35) {encoder};
-    \node[font=\tiny,text=clay!80!black] at (9.0,3.35) {decoder};
+    \node[font=\tiny,text=teal!80!black] at (9.0,3.35) {decoder};
   \end{scope}
 
   \node[visible on=<2->,font=\normalsize,text=ink,align=center] at (8,2.0)
        {This box is exactly where \textbf{\textcolor{navy}{autoencoders}} come in.};
   \node[visible on=<3->,lbl] at (8,1.45)
-       {a neural network that learns to \textcolor{steel}{\textbf{compress}} an image and \textcolor{clay}{\textbf{rebuild}} it};
+       {a neural network that learns to \textcolor{steel}{\textbf{compress}} an image and \textcolor{teal}{\textbf{rebuild}} it};
 \end{canvas}
 \end{frame}
 
@@ -458,16 +469,16 @@
          node[midway,above=6pt,font=\footnotesize\bfseries,text=steel] {\ding{172}\; Encoder};
   \end{scope}
   \begin{scope}[visible on=<3->]
-    \foreach \i in {1,...,3} \node[neuron,fill=clay!10,draw=clay] (d\i) at (\LD,{\yc+(2-\i)*0.75}) {};
-    \foreach \i in {1,...,5} \node[neuron,fill=clay!10,draw=clay,text=clay!70!black] (e\i) at (\LE,{\yc+(3-\i)*0.75}) {$\hat{x}_{\i}$};
+    \foreach \i in {1,...,3} \node[neuron,fill=teal!10,draw=teal] (d\i) at (\LD,{\yc+(2-\i)*0.75}) {};
+    \foreach \i in {1,...,5} \node[neuron,fill=teal!10,draw=teal,text=teal!70!black] (e\i) at (\LE,{\yc+(3-\i)*0.75}) {$\hat{x}_{\i}$};
     \foreach \i in {1,...,2} \foreach \j in {1,...,3} \draw[slate!45,line width=0.35pt] (c\i) -- (d\j);
     \foreach \i in {1,...,3} \foreach \j in {1,...,5} \draw[slate!45,line width=0.35pt] (d\i) -- (e\j);
     \node[inner sep=0pt] (xout) at (13.9,\yc) {\includegraphics[width=2.1cm]{photo_compressed.jpg}};
     \draw[photo] (xout.south west) rectangle (xout.north east);
     \node[lbl,anchor=north] at (xout.south) {reconstruction $\hat{x}$};
     \draw[arr] (11.9,\yc) -- (xout.west);
-    \draw[decorate,decoration={brace,amplitude=6pt},clay,line width=0.8pt] (8.5,6.4) -- (11.9,6.4)
-         node[midway,above=6pt,font=\footnotesize\bfseries,text=clay!80!black] {\ding{173}\; Decoder};
+    \draw[decorate,decoration={brace,amplitude=6pt},teal,line width=0.8pt] (8.5,6.4) -- (11.9,6.4)
+         node[midway,above=6pt,font=\footnotesize\bfseries,text=teal!80!black] {\ding{173}\; Decoder};
   \end{scope}
   % redraw node layer on top of edges
   \begin{scope}[visible on=<1->]
@@ -478,7 +489,7 @@
   \node[font=\normalsize,text=ink,align=center,text width=13cm] at (8,1.55) {%
     \only<1>{The \textbf{\textcolor{steel}{encoder}} compresses the image, layer by layer, until it reaches the bottleneck.}%
     \only<2>{The \textbf{\textcolor{navy}{bottleneck}} is a narrow doorway: only the \emph{essential, non-redundant} information can pass.}%
-    \only<3>{The \textbf{\textcolor{clay}{decoder}} uses that compact code to rebuild the photo: \; $\hat{x}\approx x$.}};
+    \only<3>{The \textbf{\textcolor{teal}{decoder}} uses that compact code to rebuild the photo: \; $\hat{x}\approx x$.}};
 \end{canvas}
 \end{frame}
 
@@ -493,9 +504,9 @@
     \clusterlabels{1}
     % step 2: one dot = one image
     \begin{scope}[visible on=<2->]
-      \draw[clay,line width=0.9pt] (2.2,1.2) circle (0.14);
-      \draw[clay,line width=0.6pt] (2.33,1.28) -- (3.1,2.4);
-      \node[fill=white,draw=clay,line width=0.6pt,rounded corners=2pt,font=\scriptsize,text=clay!80!black,
+      \draw[teal,line width=0.9pt] (2.2,1.2) circle (0.14);
+      \draw[teal,line width=0.6pt] (2.33,1.28) -- (3.1,2.4);
+      \node[fill=white,draw=teal,line width=0.6pt,rounded corners=2pt,font=\scriptsize,text=teal!80!black,
             inner sep=2.5pt,anchor=south east] at (3.62,2.36) {1 dot = 1 image};
     \end{scope}
     % step 3: highlight gaps
@@ -513,7 +524,7 @@
   \node[anchor=north west,text width=6.2cm,align=left,font=\normalsize,text=ink,visible on=<2->] at (8.95,5.2) {%
     Similar images land close together: the points form separate \textbf{\textcolor{navy}{islands}}.};
   \node[anchor=north west,text width=6.2cm,align=left,font=\normalsize,text=ink,visible on=<3->] at (8.95,3.5) {%
-    Large \textbf{\textcolor{clay}{empty gaps}} remain between the islands. The decoder has not seen training examples from these regions.};
+    Large \textbf{\textcolor{teal}{empty gaps}} remain between the islands. The decoder has not seen training examples from these regions.};
 \end{canvas}
 \end{frame}
 
@@ -531,9 +542,9 @@
     \node[font=\scriptsize\bfseries,text=navy] at (2.2,1.55) {A};
     % B: in an empty region
     \begin{scope}[visible on=<2->]
-      \draw[clay,line width=0.6pt,dash pattern=on 2pt off 1.6pt] (-1.25,0.3) circle (0.5);
-      \node[star,star points=5,star point ratio=2.3,fill=clay,inner sep=1.4pt] at (-1.25,0.3) {};
-      \node[font=\scriptsize\bfseries,text=clay] at (-1.25,0.95) {B};
+      \draw[teal,line width=0.6pt,dash pattern=on 2pt off 1.6pt] (-1.25,0.3) circle (0.5);
+      \node[star,star points=5,star point ratio=2.3,fill=teal,inner sep=1.4pt] at (-1.25,0.3) {};
+      \node[font=\scriptsize\bfseries,text=teal] at (-1.25,0.95) {B};
     \end{scope}
   \end{scope}
 
@@ -546,12 +557,12 @@
   \draw[arr] (dA.east) -- (12.65,5.95);
   \node[font=\footnotesize,text=navy,anchor=north] at (13.25,5.33) {\cmark\ a clear ``7''};
   \begin{scope}[visible on=<2->]
-    \node[font=\footnotesize,text=clay!80!black,anchor=west] at (8.95,4.6) {\textbf{B}\; random point from an empty gap};
+    \node[font=\footnotesize,text=teal!80!black,anchor=west] at (8.95,4.6) {\textbf{B}\; random point from an empty gap};
     \node[smalldec] (dB) at (11.2,3.6) {Decoder};
     \draw[arr] (9.3,3.6) -- (dB.west);
     \garbled{13.25,3.6}{1.1}
     \draw[arr] (dB.east) -- (12.65,3.6);
-    \node[font=\footnotesize,text=clay!80!black,anchor=north] at (13.25,2.98) {\xmark\ meaningless};
+    \node[font=\footnotesize,text=teal!80!black,anchor=north] at (13.25,2.98) {\xmark\ meaningless};
   \end{scope}
 
   % idea box
@@ -559,7 +570,7 @@
     \draw[fill=slate!7,draw=navy!40,line width=0.6pt,rounded corners=4pt] (8.95,0.98) rectangle (15.05,2.5);
     \node[anchor=north west,text width=5.85cm,align=left,font=\footnotesize,text=ink] at (9.08,2.39) {%
       Suppose the encoder maps each image to a \textbf{\textcolor{navy}{distribution}} instead of one point.\\[3pt]
-      \textbf{\textcolor{clay}{That is the central idea behind a VAE.}}};
+      \textbf{\textcolor{teal}{That is the central idea behind a VAE.}}};
   \end{scope}
 \end{canvas}
 \end{frame}
@@ -579,9 +590,9 @@
     \end{scope}
     \only<1-2>{\clusterlabels{1}}
     \only<3->{%
-      \node[star,star points=5,star point ratio=2.3,fill=clay,inner sep=1.4pt] (new) at (-0.55,0.35) {};
-      \draw[clay,line width=0.6pt] (new) -- (-2.2,-2.45)
-        node[fill=white,draw=clay,rounded corners=2pt,inner sep=2.5pt,font=\scriptsize,text=clay!80!black,anchor=north west]
+      \node[star,star points=5,star point ratio=2.3,fill=teal,inner sep=1.4pt] (new) at (-0.55,0.35) {};
+      \draw[teal,line width=0.6pt] (new) -- (-2.2,-2.45)
+        node[fill=white,draw=teal,rounded corners=2pt,inner sep=2.5pt,font=\scriptsize,text=teal!80!black,anchor=north west]
         at (-3.55,-2.1) {sampled point $\rightarrow$ plausible image};}
   \end{scope}
 
@@ -613,8 +624,8 @@
   % ---------- highlight chips ----------
   \node[chip,draw=steel,anchor=west,text width=5.55cm,inner xsep=5pt,align=left] at (9.1,4.05)
        {\textbf{\textcolor{steel}{Autoencoder:}} one image $\rightarrow$ one point};
-  \node[chip,draw=clay,anchor=west,text width=5.55cm,inner xsep=5pt,align=left,visible on=<2->,line width=1.1pt] at (9.1,3.3)
-       {\textbf{\textcolor{clay}{VAE:}} one image $\rightarrow$ one \textbf{distribution}};
+  \node[chip,draw=teal,anchor=west,text width=5.55cm,inner xsep=5pt,align=left,visible on=<2->,line width=1.1pt] at (9.1,3.3)
+       {\textbf{\textcolor{teal}{VAE:}} one image $\rightarrow$ one \textbf{distribution}};
 
   \node[anchor=north west,text width=5.9cm,align=left,font=\footnotesize,text=ink] at (9.15,2.55) {%
     \only<1>{Right now every image is a single point, with empty gaps in between.}%
@@ -634,16 +645,16 @@
   \node[chip,draw=steel,font=\scriptsize] at (\xa,6.62) {$\rightarrow$ \textbf{\textcolor{steel}{Autoencoder}}: a single point};
   \begin{scope}[visible on=<2->]
     \node[font=\footnotesize\bfseries,text=ink] at (\xb,7.1) {Smile (probability distribution)};
-    \node[chip,draw=clay,font=\scriptsize,line width=1.1pt] at (\xb,6.62) {$\rightarrow$ \textbf{\textcolor{clay}{Variational Autoencoder}}: a distribution};
+    \node[chip,draw=teal,font=\scriptsize,line width=1.1pt] at (\xb,6.62) {$\rightarrow$ \textbf{\textcolor{teal}{Variational Autoencoder}}: a distribution};
     \node[font=\footnotesize\itshape,text=slate] at (8.1,3.8) {vs.};
   \end{scope}
   \node[lbl,rotate=90,font=\scriptsize] at (0.95,3.8) {each row = one image};
 
   \foreach \y/\s/\skin/\hair/\st/\bg/\shirt/\m/\sg/\h in {
-      5.72/-0.5/clay!28!white/clay!75!ink/0/steel!10/sky!45/-0.55/0.26/0.62,
-      4.42/0.05/clay!45!white/ink!85/1/slate!12/slate!55/0.0/0.42/0.42,
-      3.12/0.6/clay!85!ink/ink/2/clay!12/clay!45/0.5/0.17/0.86,
-      1.82/0.9/clay!55!white/slate!55!ink/3/navy!8/steel!60/0.78/0.1/0.95}{
+      5.72/-0.5/teal!28!white/teal!75!ink/0/steel!10/sky!45/-0.55/0.26/0.62,
+      4.42/0.05/teal!45!white/ink!85/1/slate!12/slate!55/0.0/0.42/0.42,
+      3.12/0.6/teal!85!ink/ink/2/teal!12/teal!45/0.5/0.17/0.86,
+      1.82/0.9/teal!55!white/slate!55!ink/3/navy!8/steel!60/0.78/0.1/0.95}{
     \face{2.05,\y}{1.02}{\s}{\skin}{\hair}{\st}{\bg}{\shirt}
     \numline{\xa,\y-0.3}{\W}
     \fill[navy] (\xa+\m*\W/2,\y-0.3) circle (0.085);
@@ -706,13 +717,13 @@
       \fill[navy] (3.25+\a*1.3,\y-0.05) circle (0.06);
     \end{scope}
     \begin{scope}[visible on=<1->]
-      \fill[clay] (3.25+\b*1.3,\y+0.08) circle (0.06);
+      \fill[teal] (3.25+\b*1.3,\y+0.08) circle (0.06);
     \end{scope}}
   \node[lbl] at (2.95,1.6) {latent distributions};
 
   % sampled attribute lists
   \foreach \yy/\c/\tag/\vals in {5.55/navy/A/{0.23,0.02,$-$0.18,0.71,$-$0.19,0.33},
-                                  3.05/clay/B/{0.17,0.28,$-$0.11,0.66,$-$0.14,0.26}}{
+                                  3.05/teal/B/{0.17,0.28,$-$0.11,0.66,$-$0.14,0.26}}{
     \begin{scope}[visible on=<2->]
       \draw[arr] (5.05,\yy) -- (6.25,\yy) node[midway,above,font=\scriptsize,text=\c] {sample \tag};
       \draw[\c!60,line width=0.6pt,rounded corners=4pt,fill=white] (6.3,\yy-1.02) rectangle (8.75,\yy+1.02);
@@ -728,8 +739,8 @@
       \draw[arr] (d\tag.east) -- (11.75,\yy);
     \end{scope}}
   \begin{scope}[visible on=<3->]
-    \face{12.45,5.55}{1.2}{0.85}{clay!55!white}{slate!55!ink}{3}{steel!10}{steel!60}
-    \face{12.45,3.05}{1.2}{0.6}{clay!55!white}{slate!55!ink}{3}{steel!10}{steel!60}
+    \face{12.45,5.55}{1.2}{0.85}{teal!55!white}{slate!55!ink}{3}{steel!10}{steel!60}
+    \face{12.45,3.05}{1.2}{0.6}{teal!55!white}{slate!55!ink}{3}{steel!10}{steel!60}
     \draw[slate,line width=0.6pt,<->,>={Stealth[length=1.3mm]}] (12.45,4.8) -- (12.45,3.8);
     \node[anchor=west,text width=2.25cm,align=left,font=\scriptsize,text=ink] at (13.2,4.3)
          {\textbf{same person}, tiny natural variations};
@@ -747,7 +758,7 @@
 \begin{canvas}
   \node[anchor=west,font=\footnotesize,text=slate] at (0.95,6.95)
        {So far: \; \textcolor{steel}{\textbf{Autoencoder}} = one point per image \quad\textbullet\quad
-                   \textcolor{clay}{\textbf{VAE}} = one distribution per image};
+                   \textcolor{teal}{\textbf{VAE}} = one distribution per image};
   \begin{scope}[shift={(1.65,4.55)},scale=0.9,every node/.append style={transform shape},
       font=\small,
       param/.append style={font=\normalsize}]
@@ -794,7 +805,7 @@
     \draw[arr] (dec.east) -- (12.4,0.2);
     % step 2: group the stages Member 2 will walk through
     \begin{scope}[visible on=<2->]
-      \foreach \xa/\xb/\n/\c in {1.85/6.1/1/steel, 6.45/9.55/2/navy, 9.75/12.2/3/clay}{
+      \foreach \xa/\xb/\n/\c in {1.85/6.1/1/steel, 6.45/9.55/2/navy, 9.75/12.2/3/teal}{
         \draw[\c,line width=0.7pt,dash pattern=on 3pt off 2pt,rounded corners=4pt] (\xa,-2.45) rectangle (\xb,1.75);
         \node[circle,fill=\c,text=white,font=\scriptsize\bfseries,inner sep=1.5pt] at (\xa+0.25,1.5) {\n};}
     \end{scope}
@@ -805,7 +816,7 @@
     \draw[navy,line width=0.8pt,rounded corners=4pt] (1.4,1.1) rectangle (14.6,2.05);
     \node[font=\small,text=ink] at (8,1.575)
       {Handing over to \textbf{\textcolor{navy}{Member 2}}: \;
-       \textcolor{steel}{\ding{172} encoder} $\rightarrow$ \textcolor{navy}{\ding{173} sampling $z$} $\rightarrow$ \textcolor{clay!80!black}{\ding{174} decoder}};
+       \textcolor{steel}{\ding{172} encoder} $\rightarrow$ \textcolor{navy}{\ding{173} sampling $z$} $\rightarrow$ \textcolor{teal!80!black}{\ding{174} decoder}};
   \end{scope}
 \end{canvas}
 \end{frame}

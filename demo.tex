@@ -10,7 +10,7 @@
 \definecolor{navy}{HTML}{0E237A}
 \definecolor{steel}{HTML}{4D6FAD}
 \definecolor{sky}{HTML}{5DADF5}
-\definecolor{clay}{HTML}{A86A52}
+\definecolor{teal}{HTML}{3F8C8A}
 \definecolor{slate}{HTML}{5B6475}
 \definecolor{paper}{HTML}{FBFAF7}
 \definecolor{ink}{HTML}{1C2233}
@@ -20,13 +20,13 @@
   invisible/.style={opacity=0,text opacity=0},
   visible on/.style={alt={#1{}{invisible}}},
   alt/.code args={<#1>#2#3}{\alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}}},
-  focus on/.style={alt={#1{draw=clay,line width=1.3pt}{}}},
+  focus on/.style={alt={#1{draw=teal,line width=1.3pt}{}}},
 }
 
 % ---------- Beamer theme ----------
 \setbeamercolor{background canvas}{bg=paper}
 \setbeamercolor{normal text}{fg=ink}
-\setbeamercolor{alerted text}{fg=clay}
+\setbeamercolor{alerted text}{fg=teal}
 \setbeamercolor{structure}{fg=navy}
 \setbeamercolor{block title}{bg=navy,fg=white}
 \setbeamercolor{block body}{bg=slate!7,fg=ink}
@@ -41,7 +41,7 @@
     \clip (0,0) rectangle (16,9);
     \stripeTR{14.35}{0.45}{navy}
     \stripeTR{15.05}{0.55}{sky}
-    \stripeTR{15.85}{0.12}{clay}
+    \stripeTR{15.85}{0.12}{teal}
   \end{tikzpicture}}
 
 \setbeamertemplate{frametitle}{%
@@ -50,18 +50,29 @@
     {\usebeamercolor[fg]{structure}\fontseries{eb}\selectfont\Large\insertframetitle}\par
     \vspace{3pt}
     \begin{tikzpicture}
-      \fill[clay] (0,0) rectangle (1.4,0.09);
+      \fill[teal] (0,0) rectangle (1.4,0.09);
       \fill[sky] (1.55,0) rectangle (1.95,0.09);
     \end{tikzpicture}
   \end{beamercolorbox}}
 
 \setbeamertemplate{footline}{%
   \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
-    \node[anchor=west,text=steel,font=\scriptsize] at (0.9,0.42) {Variational Autoencoder \,\textbar\, CSE 200};
-    \fill[navy] (14.35,0.42) circle (0.09);
-    \fill[sky]  (14.65,0.42) circle (0.09);
-    \fill[clay] (14.95,0.42) circle (0.09);
-    \node[text=navy,font=\scriptsize\bfseries] at (15.4,0.42) {\insertframenumber};
+    % Senior-inspired information bar, restyled in the VAE palette.
+    \fill[navy] (0,0) rectangle (16,0.58);
+    \fill[steel] (0,0.58) rectangle (3.55,0.64);
+    \fill[sky]  (3.55,0.58) rectangle (16,0.64);
+    \draw[white,opacity=0.22,line width=0.45pt]
+      (3.55,0.10) -- (3.55,0.48)
+      (12.55,0.10) -- (12.55,0.48);
+    \node[anchor=west,text=white,font=\scriptsize\bfseries] at (0.72,0.29)
+      {B2 \;\textbullet\; GROUP 2};
+    \node[text=white,font=\scriptsize\bfseries] at (8.05,0.29)
+      {VARIATIONAL AUTOENCODER};
+    \node[anchor=east,text=white,font=\scriptsize] at (14.55,0.29)
+      {CSE 200};
+    \node[fill=steel,rounded corners=1.5pt,inner xsep=4.5pt,inner ysep=1.6pt,
+          text=white,font=\tiny\bfseries] at (15.35,0.29)
+      {\insertframenumber/\inserttotalframenumber};
   \end{tikzpicture}}
 
 \title{Variational Autoencoder}
@@ -81,16 +92,16 @@
   % corner stripes
   \stripeTR{11.6}{0.55}{navy}
   \stripeTR{12.45}{0.95}{sky}
-  \stripeTR{13.7}{0.14}{clay}
+  \stripeTR{13.7}{0.14}{teal}
   \stripeTR{14.15}{0.75}{steel}
   \stripeTR{15.2}{0.3}{navy}
   \stripeBL{3.9}{0.6}{navy}
   \stripeBL{3.05}{0.9}{sky}
-  \stripeBL{2.65}{0.14}{clay}
+  \stripeBL{2.65}{0.14}{teal}
   \stripeBL{1.85}{0.6}{steel}
 
   % dots
-  \foreach \c [count=\i] in {navy,sky,clay}{
+  \foreach \c [count=\i] in {navy,sky,teal}{
     \fill[\c] (0.35+0.62*\i,8.2) circle (0.22);
     \fill[\c] (12.9+0.62*\i,0.75) circle (0.22);
   }
@@ -105,7 +116,7 @@
       \draw[white,opacity=0.10] (C) circle (\r);
     \draw[white,opacity=0.18] ($(C)+(-2.6,0)$) -- ++(5.2,0) ($(C)+(0,-2.6)$) -- ++(0,5.2);
     \pgfmathsetseed{7}
-    \foreach \mx/\my/\col in {-0.8/0.6/clay!55!white, 0.9/0.4/sky, 0.0/-0.9/white}{
+    \foreach \mx/\my/\col in {-0.8/0.6/teal!55!white, 0.9/0.4/sky, 0.0/-0.9/white}{
       \foreach \k in {1,...,55}{
         \pgfmathsetmacro\rr{0.42*sqrt(-2*ln(max(rnd,0.02)))}
         \pgfmathsetmacro\tt{360*rnd}
@@ -118,14 +129,15 @@
   \node[font=\scriptsize,text=steel] at ($(C)+(0,-3.0)$) {latent space $z \sim \mathcal{N}(\bm{\mu},\bm{\sigma}^2)$};
 
   % text block
-  \node[anchor=west,font=\small\bfseries,text=clay] at (1.0,6.55) {CSE 200 \;\textbullet\; Group Presentation};
+  \node[anchor=west,font=\small\bfseries,text=teal] at (1.0,6.55)
+       {CSE 200 \;\textbullet\; B2 \;\textbullet\; Group 2};
   \node[anchor=north west,text=navy,align=left,font=\fontsize{32}{35}\fontseries{eb}\selectfont]
        at (0.9,6.3) {VARIATIONAL\\AUTOENCODER};
-  \fill[clay] (1.0,3.55) rectangle ++(1.6,0.12);
+  \fill[teal] (1.0,3.55) rectangle ++(1.6,0.12);
   \fill[sky]  (2.75,3.55) rectangle ++(0.45,0.12);
   \node[anchor=west,text=steel,font=\large] at (0.95,3.0) {Learning to generate, not just compress};
   \node[anchor=west,text=ink,font=\small] at (1.0,2.2) {Presented by \textbf{Member 1} \,\textbullet\, \textbf{Member 2} \,\textbullet\, \textbf{Member 3}};
-  \node[anchor=west,text=clay,font=\footnotesize\itshape] at (1.0,1.72) {Department of CSE, BUET};
+  \node[anchor=west,text=teal,font=\footnotesize\itshape] at (1.0,1.72) {Department of CSE, BUET};
 \end{tikzpicture}
 \end{frame}
 }
@@ -190,7 +202,7 @@
   \node[lbl,visible on=<3->,text=navy] at (8.75,1.15) {$z=\bm{\mu}+\bm{\sigma}\odot\epsilon$};
 
   % ---------- decoder ----------
-  \node[block,shape border rotate=90,fill=clay!10,draw=clay,text=clay!70!black,
+  \node[block,shape border rotate=90,fill=teal!10,draw=teal,text=teal!70!black,
         visible on=<4->,focus on=<4>] (dec) at (10.9,0.2) {Decoder};
   \node[lbl,visible on=<4->] at (10.9,-1.35) {$p_\theta(x\mid z)$};
   \draw[arr,visible on=<4->] (z) -- (dec.west);
@@ -208,9 +220,9 @@
   \draw[arr,visible on=<4->] (dec.east) -- (12.4,0.2);
 
   % ---------- loss braces ----------
-  \draw[visible on=<5->,decorate,decoration={brace,amplitude=6pt,mirror},clay,line width=0.8pt]
+  \draw[visible on=<5->,decorate,decoration={brace,amplitude=6pt,mirror},teal,line width=0.8pt]
        (0,-2.45) -- (13.99,-2.45)
-       node[midway,below=7pt,text=clay!80!black,font=\footnotesize] {reconstruction: make $\hat{x}\approx x$};
+       node[midway,below=7pt,text=teal!80!black,font=\footnotesize] {reconstruction: make $\hat{x}\approx x$};
   \draw[visible on=<5->,decorate,decoration={brace,amplitude=6pt},steel,line width=0.8pt]
        (4.8,1.5) -- (5.9,1.5)
        node[midway,above=7pt,text=steel,font=\footnotesize] {KL: keep $q$ near $\mathcal{N}(0,I)$};
@@ -221,7 +233,7 @@
   \begin{beamercolorbox}[rounded=true,wd=0.8\linewidth,center,sep=4pt]{block body}
     \centering\small
     $\mathcal{L}(\theta,\phi;x)=
-      \underbrace{\mathbb{E}_{q_\phi(z\mid x)}\!\left[\log p_\theta(x\mid z)\right]}_{\color{clay}\text{reconstruction}}
+      \underbrace{\mathbb{E}_{q_\phi(z\mid x)}\!\left[\log p_\theta(x\mid z)\right]}_{\color{teal}\text{reconstruction}}
       \;-\;
       \underbrace{D_{\text{KL}}\!\left(q_\phi(z\mid x)\,\|\,p(z)\right)}_{\color{steel}\text{regularisation}}$
   \end{beamercolorbox}}

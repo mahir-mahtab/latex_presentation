@@ -1,0 +1,372 @@
+% =================================================================
+%  VAE presentation — PART 2 (Member 2)
+%  Mechanism: encoder distribution -> reparameterisation -> loss -> generation
+%  Theme copied from ../demo.tex. Build with pdflatex twice.
+% =================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usepackage[sfdefault]{FiraSans}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{tikz}
+\usetikzlibrary{calc,positioning,shapes.geometric,arrows.meta,decorations.pathreplacing}
+
+% ---------- Palette ----------
+\definecolor{navy}{HTML}{0E237A}
+\definecolor{steel}{HTML}{4D6FAD}
+\definecolor{sky}{HTML}{5DADF5}
+\definecolor{teal}{HTML}{3F8C8A}
+\definecolor{slate}{HTML}{5B6475}
+\definecolor{paper}{HTML}{FBFAF7}
+\definecolor{ink}{HTML}{1C2233}
+
+% ---------- TikZ overlay helpers ----------
+\tikzset{
+  invisible/.style={opacity=0,text opacity=0},
+  visible on/.style={alt={#1{}{invisible}}},
+  alt/.code args={<#1>#2#3}{\alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}}},
+  focus on/.style={alt={#1{draw=teal,line width=1.3pt}{}}},
+}
+
+% ---------- Standard diagram styles ----------
+\tikzset{
+  >={Stealth[length=2mm]},
+  arr/.style={->,line width=0.7pt,draw=slate},
+  backarr/.style={<-,line width=0.8pt,draw=steel},
+  lbl/.style={font=\footnotesize,text=slate,align=center},
+  block/.style={trapezium,trapezium stretches=true,minimum width=2.4cm,minimum height=1.55cm,
+                line width=0.8pt,font=\bfseries},
+  enc/.style={block,shape border rotate=270,fill=steel!12,draw=steel,text=navy},
+  dec/.style={block,shape border rotate=90,fill=teal!10,draw=teal,text=teal!70!black},
+  param/.style={rectangle,rounded corners=2pt,minimum width=1.05cm,minimum height=0.65cm,
+                draw=steel,line width=0.8pt,fill=white,text=navy,font=\normalsize},
+  op/.style={circle,draw=slate,line width=0.8pt,fill=white,minimum size=0.52cm,inner sep=1pt},
+  panel/.style={rectangle,rounded corners=5pt,draw=slate!45,line width=0.6pt,fill=white},
+}
+
+% ---------- Beamer theme ----------
+\setbeamercolor{background canvas}{bg=paper}
+\setbeamercolor{normal text}{fg=ink}
+\setbeamercolor{alerted text}{fg=teal}
+\setbeamercolor{structure}{fg=navy}
+\setbeamercolor{block title}{bg=navy,fg=white}
+\setbeamercolor{block body}{bg=slate!7,fg=ink}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+\newcommand{\stripeTR}[3]{\fill[#3] (#1,9.2) -- ++(#2,0) -- ++(4.5,-3.15) -- ++(-#2,0) -- cycle;}
+\newcommand{\stripeBL}[3]{\fill[#3] (#1,-0.2) -- ++(#2,0) -- ++(-4.5,3.15) -- ++(-#2,0) -- cycle;}
+
+\setbeamertemplate{background}{%
+  \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
+    \clip (0,0) rectangle (16,9);
+    \stripeTR{14.35}{0.45}{navy}
+    \stripeTR{15.05}{0.55}{sky}
+    \stripeTR{15.85}{0.12}{teal}
+  \end{tikzpicture}}
+
+\setbeamertemplate{frametitle}{%
+  \vspace*{0.2cm}%
+  \begin{beamercolorbox}[wd=\paperwidth,leftskip=0.9cm]{frametitle}
+    {\usebeamercolor[fg]{structure}\fontseries{eb}\selectfont\Large\insertframetitle}\par
+    \vspace{3pt}
+    \begin{tikzpicture}
+      \fill[teal] (0,0) rectangle (1.4,0.09);
+      \fill[sky] (1.55,0) rectangle (1.95,0.09);
+    \end{tikzpicture}
+  \end{beamercolorbox}}
+
+\setbeamertemplate{footline}{%
+  \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
+    \fill[navy] (0,0) rectangle (16,0.58);
+    \fill[steel] (0,0.58) rectangle (3.55,0.64);
+    \fill[sky]  (3.55,0.58) rectangle (16,0.64);
+    \draw[white,opacity=0.22,line width=0.45pt]
+      (3.55,0.10) -- (3.55,0.48)
+      (12.55,0.10) -- (12.55,0.48);
+    \node[anchor=west,text=white,font=\scriptsize\bfseries] at (0.72,0.29)
+      {B2 \;\textbullet\; GROUP 2};
+    \node[text=white,font=\scriptsize\bfseries] at (8.05,0.29)
+      {VARIATIONAL AUTOENCODER};
+    \node[anchor=east,text=white,font=\scriptsize] at (14.55,0.29)
+      {CSE 200};
+    \node[fill=steel,rounded corners=1.5pt,inner xsep=4.5pt,inner ysep=1.6pt,
+          text=white,font=\tiny\bfseries] at (15.35,0.29)
+      {\insertframenumber/\inserttotalframenumber};
+  \end{tikzpicture}}
+
+% ---------- Page canvas and reusable drawings ----------
+\newenvironment{canvas}
+  {\begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]}
+  {\end{tikzpicture}}
+
+% A small MNIST-style seven. #1 = position, #2 = scale, #3 = ink colour.
+\newcommand{\digitseven}[3]{%
+  \begin{scope}[shift={(#1)},scale=#2]
+    \fill[white] (0,0) rectangle (1.44,1.92);
+    \foreach \x/\y in {1/7,2/7,3/7,4/7,5/7,5/6,5/5,4/4,4/3,3/2,3/1}
+      \fill[#3] ({\x*0.24},{\y*0.24}) rectangle ++(0.24,0.24);
+    \draw[slate!50,line width=0.5pt] (0,0) rectangle (1.44,1.92);
+  \end{scope}}
+
+% A slightly imperfect reconstruction of the same digit.
+\newcommand{\digitrecon}[2]{%
+  \begin{scope}[shift={(#1)},scale=#2]
+    \fill[white] (0,0) rectangle (1.44,1.92);
+    \foreach \x/\y in {1/7,2/7,3/7,4/7,5/7,5/6,5/5,4/4,4/3,3/2,3/1}
+      \fill[ink!58] ({\x*0.24},{\y*0.24}) rectangle ++(0.24,0.24);
+    \foreach \x/\y in {0/7,4/5,2/2}
+      \fill[slate!22] ({\x*0.24},{\y*0.24}) rectangle ++(0.24,0.24);
+    \draw[slate!50,line width=0.5pt] (0,0) rectangle (1.44,1.92);
+  \end{scope}}
+
+\title{Variational Autoencoder}
+\hyphenpenalty=10000 \exhyphenpenalty=10000
+
+\begin{document}
+
+% Continue after Part 1: title slide + 11 content frames = 12 frames.
+\setcounter{framenumber}{12}
+
+% =================================================================
+%  PAGE 1 — The encoder describes a distribution
+% =================================================================
+\begin{frame}{Encoder Output: $\bm{\mu}$ and $\bm{\sigma}$}
+\begin{canvas}
+  % left: input and encoder
+  \digitseven{1.05,3.55}{1.05}{ink!82}
+  \node[lbl] at (1.8,3.25) {input $x$};
+  \node[enc,focus on=<1>] (enc) at (4.25,4.6) {Encoder};
+  \node[lbl] at (4.25,3.45) {$q_\phi(z\mid x)$};
+  \draw[arr] (2.65,4.55) -- (enc.west);
+
+  % parameters
+  \node[param,visible on=<2->,focus on=<2>] (mu) at (6.9,5.35) {$\bm{\mu}$};
+  \node[param,visible on=<3->,focus on=<3>] (sigma) at (6.9,3.85) {$\bm{\sigma}$};
+  \draw[arr,visible on=<2->] (enc.east) ++(0,0.25) -- (mu.west);
+  \draw[arr,visible on=<3->] (enc.east) ++(0,-0.25) -- (sigma.west);
+  \node[anchor=east,font=\scriptsize,text=slate,visible on=<2->] at (6.25,5.35) {centre};
+  \node[anchor=east,font=\scriptsize,text=slate,visible on=<3->] at (6.25,3.85) {spread};
+
+  % right: Gaussian graph
+  \draw[panel] (8.35,2.15) rectangle (15.05,6.8);
+  \node[anchor=west,font=\footnotesize\bfseries,text=ink] at (8.7,6.45) {Encoded distribution for one input};
+  \begin{scope}[shift={(11.7,2.9)}]
+    \draw[slate!55,line width=0.55pt,->] (-2.65,0) -- (2.7,0) node[below,font=\scriptsize,text=slate] {$z$};
+    \draw[slate!35,line width=0.5pt] (-2.25,0.08) -- (-2.25,-0.08)
+      (0,0.08) -- (0,-0.08) (2.25,0.08) -- (2.25,-0.08);
+    \begin{scope}[visible on=<2->]
+      \fill[steel!10]
+        plot[domain=-2.45:2.45,samples=70] ({\x},{2.75*exp(-0.5*\x*\x)})
+        -- (2.45,0) -- (-2.45,0) -- cycle;
+      \draw[steel,line width=0.9pt]
+        plot[domain=-2.45:2.45,samples=70] ({\x},{2.75*exp(-0.5*\x*\x)});
+      \draw[navy,line width=0.65pt,dashed] (0,0) -- (0,2.82);
+      \node[font=\scriptsize\bfseries,text=navy,anchor=north] at (0,-0.12) {$\bm{\mu}$};
+    \end{scope}
+    \begin{scope}[visible on=<3->]
+      \draw[steel,line width=0.75pt,<->] (0,0.42) -- (1,0.42);
+      \draw[steel,line width=0.55pt] (1,0.25) -- (1,1.72);
+      \node[font=\scriptsize\bfseries,text=steel,above] at (0.5,0.42) {$\bm{\sigma}$};
+    \end{scope}
+  \end{scope}
+
+  % one concise explanation per click
+  \node[anchor=west,text width=13.6cm,align=center,font=\normalsize,text=ink] at (1.2,1.35) {%
+    \only<1>{The encoder reads the input and extracts the information needed for its latent representation.}%
+    \only<2>{The mean $\bm{\mu}$ locates the centre of the encoded example in latent space.}%
+    \only<3>{The standard deviation $\bm{\sigma}$ expresses uncertainty around that centre: \quad
+      $q_\phi(z\mid x)=\mathcal{N}(\bm{\mu},\bm{\sigma}^{2})$.}};
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 2 — Reparameterisation keeps the random sample trainable
+% =================================================================
+\begin{frame}{Reparameterised Sampling}
+\begin{canvas}
+  % step 1: the apparent obstacle
+  \begin{scope}[visible on=<1>]
+    \draw[panel] (2.0,2.3) rectangle (14.0,6.65);
+    \node[font=\large\bfseries,text=steel] (q) at (4.0,4.55) {$q_\phi(z\mid x)$};
+    \node[rectangle,rounded corners=4pt,draw=slate,line width=0.8pt,fill=slate!7,
+          minimum width=2.0cm,minimum height=1.0cm,font=\small,text=ink] (sample) at (8.0,4.55) {random draw};
+    \node[circle,draw=navy,fill=navy!8,line width=0.8pt,minimum size=0.9cm,
+          font=\large,text=navy] (z0) at (11.7,4.55) {$z$};
+    \draw[arr] (q) -- (sample);
+    \draw[arr] (sample) -- (z0);
+    \draw[steel,line width=0.8pt,<-] (4.8,3.45) -- (7.55,3.45);
+    \node[font=\scriptsize,text=slate] at (6.15,3.12) {a raw random draw breaks this gradient path};
+    \draw[teal,line width=1pt] (7.35,3.25) -- (7.7,3.65) (7.7,3.25) -- (7.35,3.65);
+  \end{scope}
+
+  % steps 2--4: reparameterised computation graph
+  \begin{scope}[visible on=<2->]
+    \node[param] (mu2) at (2.15,5.25) {$\bm{\mu}$};
+    \node[param] (sg2) at (2.15,3.75) {$\bm{\sigma}$};
+    \node[op,focus on=<2>] (times) at (5.35,3.75) {$\odot$};
+    \node[op,focus on=<2>] (plus) at (7.2,4.65) {$+$};
+    \draw[arr] (mu2.east) -| (plus.north);
+    \draw[arr] (sg2.east) -- (times.west);
+    \draw[arr] (times) -| (plus.south);
+
+    % noise source
+    \begin{scope}[shift={(4.05,2.00)}]
+      \fill[slate!10] plot[domain=-0.85:0.85,samples=45]
+        ({\x},{0.78*exp(-5.5*\x*\x)}) -- (0.85,0) -- (-0.85,0) -- cycle;
+      \draw[slate,line width=0.8pt] plot[domain=-0.85:0.85,samples=45]
+        ({\x},{0.78*exp(-5.5*\x*\x)});
+      \draw[slate!50,line width=0.5pt] (-0.95,0) -- (0.95,0);
+      \node[lbl,anchor=north] at (0,-0.15) {$\epsilon\sim\mathcal{N}(0,I)$};
+    \end{scope}
+    \draw[arr,dashed] (4.45,2.75) -- (times.south);
+
+    \node[circle,draw=navy,fill=navy!8,line width=0.8pt,minimum size=0.9cm,
+          font=\large,text=navy,focus on=<3>] (z2) at (9.0,4.65) {$z$};
+    \draw[arr] (plus) -- (z2);
+    \node[dec,minimum width=2.0cm,minimum height=1.35cm] (dec2) at (11.65,4.65) {Decoder};
+    \draw[arr] (z2) -- (dec2.west);
+    \digitrecon{13.35,3.62}{0.9}
+    \node[lbl] at (14.0,3.35) {$\hat{x}$};
+    \draw[arr] (dec2.east) -- (13.2,4.65);
+
+    \begin{scope}[visible on=<3->]
+      \draw[panel,draw=navy!45,fill=navy!4] (5.15,6.15) rectangle (10.85,7.05);
+      \node[font=\large,text=navy] at (8.0,6.6)
+        {$z=\bm{\mu}+\bm{\sigma}\odot\epsilon$};
+    \end{scope}
+
+    \begin{scope}[visible on=<4->]
+      \node[rectangle,rounded corners=3pt,fill=steel!12,draw=steel,line width=0.7pt,
+            font=\scriptsize\bfseries,text=navy,inner xsep=5pt,inner ysep=3pt] (loss) at (14.25,6.25) {loss};
+      \draw[backarr] (z2.north east) to[out=45,in=205] node[above,font=\scriptsize,text=steel] {gradient} (loss.west);
+      \draw[backarr] (mu2.north) to[out=70,in=170] (8.0,6.02);
+      \draw[backarr] (sg2.south) to[out=-55,in=190] (6.8,2.90);
+    \end{scope}
+  \end{scope}
+
+  \node[anchor=west,text width=13.6cm,align=center,font=\normalsize,text=ink] at (1.2,1.05) {%
+    \only<1>{Training needs a differentiable route through the latent sample.}%
+    \only<2>{The reparameterisation trick isolates the randomness in $\epsilon$.}%
+    \only<3>{The sample stays random, while $z$ becomes an explicit function of $\bm{\mu}$ and $\bm{\sigma}$.}%
+    \only<4>{Gradients can now update both encoder parameters through the sampled value of $z$.}};
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 3 — The objective balances fidelity and regularity
+% =================================================================
+\begin{frame}{Reconstruction and KL Loss}
+\begin{canvas}
+  % left objective
+  \draw[panel,visible on=<1->,focus on=<1>] (0.9,2.25) rectangle (7.65,6.85);
+  \node[anchor=west,font=\footnotesize\bfseries,text=teal!75!black,visible on=<1->]
+    at (1.25,6.48) {Reconstruction loss};
+  \begin{scope}[visible on=<1->]
+    \digitseven{1.55,3.55}{1.1}{ink!82}
+    \node[lbl] at (2.35,3.25) {input $x$};
+    \node[font=\Large,text=slate] at (4.3,4.65) {$\longleftrightarrow$};
+    \digitrecon{5.25,3.55}{1.1}
+    \node[lbl] at (6.05,3.25) {reconstruction $\hat{x}$};
+    \draw[decorate,decoration={brace,amplitude=6pt,mirror},teal,line width=0.8pt]
+      (1.6,2.85) -- (6.75,2.85)
+      node[midway,below=7pt,font=\footnotesize,text=teal!75!black] {make $\hat{x}$ resemble $x$};
+  \end{scope}
+
+  % right objective
+  \draw[panel,visible on=<2->,focus on=<2>] (8.05,2.25) rectangle (15.1,6.85);
+  \node[anchor=west,font=\footnotesize\bfseries,text=steel,visible on=<2->]
+    at (8.4,6.48) {KL regularisation};
+  \begin{scope}[shift={(11.55,3.15)},visible on=<2->]
+    \draw[slate!55,line width=0.55pt,->] (-2.6,0) -- (2.7,0) node[below,font=\scriptsize,text=slate] {$z$};
+    \fill[slate!6]
+      plot[domain=-2.5:2.5,samples=70] ({\x},{2.65*exp(-0.5*\x*\x)})
+      -- (2.5,0) -- (-2.5,0) -- cycle;
+    \draw[navy,line width=0.8pt,dashed]
+      plot[domain=-2.5:2.5,samples=70] ({\x},{2.65*exp(-0.5*\x*\x)});
+    \fill[steel!10]
+      plot[domain=-0.95:2.45,samples=70] ({\x},{2.15*exp(-((\x-0.72)^2)/(2*0.68*0.68))})
+      -- (2.45,0) -- (-0.95,0) -- cycle;
+    \draw[steel,line width=0.9pt]
+      plot[domain=-0.95:2.45,samples=70] ({\x},{2.15*exp(-((\x-0.72)^2)/(2*0.68*0.68))});
+    \draw[steel,line width=0.75pt,->] (0.75,1.35) -- (0.18,1.35);
+    \node[font=\scriptsize,text=steel,anchor=west] at (1.35,2.35) {$q_\phi(z\mid x)$};
+    \node[font=\scriptsize,text=navy,anchor=east] at (-1.0,2.5) {$p(z)=\mathcal{N}(0,I)$};
+  \end{scope}
+  \node[lbl,text width=5.8cm,visible on=<2->] at (11.55,2.65)
+    {keep the encoded distribution close to the prior};
+
+  % combined objective
+  \begin{scope}[visible on=<3->]
+    \draw[rounded corners=5pt,fill=slate!7,draw=navy!45,line width=0.7pt]
+      (1.3,0.92) rectangle (14.7,1.9);
+    \node[font=\normalsize,text=ink] at (8.0,1.42) {$
+      \mathcal{L}_{\text{VAE}}=
+      \underbrace{\mathcal{L}_{\text{recon}}(x,\hat{x})}_{\color{teal}\text{preserve the input}}
+      +
+      \underbrace{D_{\text{KL}}\!\left(q_\phi(z\mid x)\,\|\,p(z)\right)}_{\color{steel}\text{organise latent space}}
+    $};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 4 — The trained prior becomes a reliable source of samples
+% =================================================================
+\begin{frame}{A Smooth, Sampleable Latent Space}
+\begin{canvas}
+  % latent-space graph
+  \draw[panel] (0.95,1.45) rectangle (9.3,6.9);
+  \node[anchor=west,font=\footnotesize\bfseries,text=ink] at (1.3,6.55) {After training};
+  \begin{scope}[shift={(5.0,4.0)}]
+    \draw[slate!12,line width=0.4pt,step=0.5] (-3.35,-2.05) grid (3.35,2.05);
+    \draw[slate!35,line width=0.5pt] (-3.35,0) -- (3.35,0) (0,-2.05) -- (0,2.05);
+    \draw[navy,line width=0.7pt,dashed] (0,0) ellipse (2.75 and 1.72);
+    \node[font=\scriptsize,text=navy,anchor=south west] at (-3.15,1.6) {$p(z)=\mathcal{N}(0,I)$};
+
+    % overlapping encoded distributions
+    \begin{scope}[visible on=<1->]
+      \foreach \cx/\cy/\rx/\ry/\col in {
+        -1.35/0.62/0.95/0.58/steel,
+         0.15/0.75/0.88/0.52/teal,
+         1.20/0.18/0.95/0.60/navy,
+        -0.72/-0.72/1.05/0.56/teal,
+         0.72/-0.70/1.00/0.52/steel}{
+        \fill[\col!8] (\cx,\cy) ellipse [x radius=\rx,y radius=\ry];
+        \draw[\col!70,line width=0.55pt] (\cx,\cy) ellipse [x radius=\rx,y radius=\ry];
+        \fill[\col] (\cx,\cy) circle (0.055);
+      }
+      \node[font=\scriptsize,text=slate] at (0,-1.78) {overlapping $q_\phi(z\mid x)$ distributions};
+    \end{scope}
+
+    % a new sample from the prior
+    \begin{scope}[visible on=<2->]
+      \fill[navy] (0.48,0.18) circle (0.12);
+      \draw[teal,line width=1.0pt] (0.48,0.18) circle (0.23);
+      \node[font=\scriptsize\bfseries,text=navy,anchor=south west] at (0.66,0.35) {sample $z$};
+    \end{scope}
+  \end{scope}
+  \node[lbl,anchor=east] at (8.95,1.72) {$z_1$};
+  \node[lbl,anchor=west,rotate=90] at (1.15,6.15) {$z_2$};
+
+  % generation path
+  \begin{scope}[visible on=<3->]
+    \draw[arr] (8.35,4.18) -- (10.25,4.18);
+    \node[lbl] at (9.3,4.48) {$z\sim p(z)$};
+    \node[dec,minimum width=2.15cm,minimum height=1.45cm,focus on=<3>] (dec4) at (11.45,4.18) {Decoder};
+    \node[lbl] at (11.45,3.15) {$p_\theta(x\mid z)$};
+    \draw[arr] (dec4.east) -- (13.05,4.18);
+    \digitseven{13.15,3.15}{1.1}{ink!68}
+    \node[lbl] at (13.95,2.85) {new sample $\hat{x}$};
+  \end{scope}
+
+  \begin{scope}[visible on=<4->]
+    \draw[rounded corners=5pt,fill=navy!5,draw=navy,line width=0.8pt]
+      (9.75,1.05) rectangle (15.05,2.30);
+    \node[text width=4.9cm,align=center,font=\scriptsize,text=ink] at (12.4,1.68)
+      {KL aligns latent space with the prior.\\Random samples now decode into new data.};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,80 @@
+\documentclass[tikz]{standalone}
+
+\usepackage{xstring}
+
+\usetikzlibrary{fit,positioning}
+
+\newcommand\drawencoder[2]{
+  \foreach \neurons [count=\lyrIdx] in #2 {
+    \StrCount{\neurons}{,}[\arrlength] % uses the xstring package
+    \foreach \n [count=\nIdx] in \neurons
+      \node[neuron, fill=orange!70] (#1-\lyrIdx-\nIdx) at (2*\lyrIdx, \arrlength/2-1.4*\nIdx) {\n}; % Change color here
+  }
+}
+
+\newcommand\drawdecoder[2]{
+  \foreach \neurons [count=\lyrIdx] in #2 {
+    \StrCount{\neurons}{,}[\arrlength] % uses the xstring package
+    \foreach \n [count=\nIdx] in \neurons
+      \node[neuron, fill=blue!60!black] (#1-\lyrIdx-\nIdx) at (2*\lyrIdx, \arrlength/2-1.4*\nIdx) {\n}; % Change color here
+  }
+}
+
+\newcommand\denselyConnectNodes[2]{
+  \foreach \n [count=\lyrIdx, remember=\lyrIdx as \previdx, remember=\n as \prevn] in #2 {
+    \foreach \y in {1,...,\n} {
+      \ifnum \lyrIdx > 1
+        \foreach \x in {1,...,\prevn}
+          \draw[->] (#1-\previdx-\x) -- (#1-\lyrIdx-\y);
+      \fi
+    }
+  }
+}
+
+\begin{document}
+\begin{tikzpicture}[
+    shorten >=1pt, shorten <=1pt,
+    neuron/.style={circle, draw, minimum size=4ex, thick},
+    legend/.style={font=\large\bfseries},
+  ]
+
+  % encoder
+  \drawencoder{encoder}{{{,,,,}, {,,,}, {,,}}}
+  \denselyConnectNodes{encoder}{{5, 4, 3}}
+
+  % decoder
+  \begin{scope}[xshift=11cm]
+    \drawdecoder{decoder}{{{,,}, {,,,}, {,,,,}}}
+    \denselyConnectNodes{decoder}{{3, 4, 5}}
+  \end{scope}
+
+  % mu, sigma, sample nodes (change colors here)
+  \foreach \idx  in {1,...,3} {
+      \coordinate[neuron, right=2 of encoder-3-2, yshift=\idx cm,, fill=purple!70, fill ] (mu\idx);
+      \coordinate[neuron, right=2 of encoder-3-2, yshift=-\idx cm, fill=blue!70, fill] (sigma\idx);
+      \coordinate[neuron, right=4 of encoder-3-2, yshift=\idx cm-2cm, fill=green!70, fill] (sample\idx);
+    }
+
+  % mu, sigma, sample boxes
+  \node [label=$\mu$, fit=(mu1) (mu3), draw, fill=red!30, opacity=0.4] (mu) {};  % Change box color here
+  \node [label=$\sigma$, fit=(sigma1) (sigma3), draw, fill=purple!30, opacity=0.4] (sigma) {};  % Change box color here
+  \node [label=sample, fit=(sample1) (sample3), draw, fill=cyan!30, opacity=0.4] (sample) {};  % Change box color here
+
+  % mu, sigma, sample connections
+    \draw[->] (mu.east) -- (sample.west);
+    \draw[->] (sigma.east) -- (sample.west);
+  \foreach \a in {1,2,3}
+  \foreach \b in {1,2,3} {
+      \draw[->] (encoder-3-\a) -- (mu\b);
+      \draw[->] (encoder-3-\a) -- (sigma\b);
+      \draw[->] (sample\a) -- (decoder-1-\b);
+    }
+
+  % input + output labels
+  \foreach \idx in {1,...,5} {
+      \node[left=0 of encoder-1-\idx] {$x_\idx$};
+      \node[right=0 of decoder-3-\idx] {$\hat x_\idx$};
+    }
+
+\end{tikzpicture}
+\end{document}
