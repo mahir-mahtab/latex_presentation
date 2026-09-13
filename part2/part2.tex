@@ -1,0 +1,902 @@
+% =================================================================
+%  VAE presentation — PART 2 (Member 2)
+%  Diagram + mathematics: encoder distribution -> reparameterisation
+%  -> reconstruction / KL -> ELBO -> one training step
+%  Theme: see ../CLAUDE.md  (preamble copied from ../part1/part1.tex)
+%  Senior figures rebuilt in our palette: high_vae block diagram, vae_nn
+%  neural view, KL effect on latent space, training-loss animation.
+%  Build: pdflatex twice.
+% =================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usepackage[sfdefault]{FiraSans}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{pifont}
+\usepackage{tikz}
+\usetikzlibrary{calc,positioning,shapes.geometric,shapes.symbols,arrows.meta,decorations.pathreplacing}
+\graphicspath{{img/}}
+
+% ---------- Palette ----------
+\definecolor{navy}{HTML}{0E237A}
+\definecolor{steel}{HTML}{4D6FAD}
+\definecolor{sky}{HTML}{5DADF5}
+\definecolor{teal}{HTML}{3F8C8A}
+\definecolor{slate}{HTML}{5B6475}
+\definecolor{paper}{HTML}{FBFAF7}
+\definecolor{ink}{HTML}{1C2233}
+% deeper blue-teal for the "mystery box" = a mix of two palette colours (no new hue)
+\colorlet{deepteal}{navy!55!teal}
+
+% ---------- TikZ overlay helpers ----------
+\tikzset{
+  invisible/.style={opacity=0,text opacity=0},
+  visible on/.style={alt={#1{}{invisible}}},
+  alt/.code args={<#1>#2#3}{\alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}}},
+  focus on/.style={alt={#1{draw=teal,line width=1.3pt}{}}},
+  emphasis on/.style={alt={#1{draw=deepteal,line width=1.3pt,fill=deepteal!4}{}}},
+}
+
+% ---------- Standard diagram styles ----------
+\tikzset{
+  >={Stealth[length=2mm]},
+  arr/.style={->,line width=0.7pt,draw=slate},
+  lbl/.style={font=\footnotesize,text=slate,align=center},
+  block/.style={trapezium,trapezium stretches=true,minimum width=2.4cm,minimum height=1.55cm,
+                line width=0.8pt,font=\bfseries},
+  enc/.style={block,shape border rotate=270,fill=steel!12,draw=steel,text=navy},
+  dec/.style={block,shape border rotate=90,fill=teal!10,draw=teal,text=teal!70!black},
+  param/.style={rectangle,rounded corners=2pt,minimum width=0.95cm,minimum height=0.6cm,
+                draw=steel,line width=0.8pt,fill=white,text=navy,font=\normalsize},
+  op/.style={circle,draw=slate,line width=0.8pt,fill=white,inner sep=1pt},
+  photo/.style={draw=slate!50,line width=0.5pt},
+  chip/.style={rectangle,rounded corners=3pt,line width=0.8pt,inner xsep=7pt,inner ysep=4pt,
+               font=\footnotesize,fill=white},
+  neuron/.style={circle,minimum size=0.48cm,inner sep=0pt,line width=0.7pt,font=\scriptsize},
+  mystery/.style={rectangle,rounded corners=5pt,draw=deepteal,line width=1.3pt,fill=white,text=deepteal,
+                  font=\fontsize{24}{24}\fontseries{eb}\selectfont},
+}
+
+% ---------- Beamer theme ----------
+\setbeamercolor{background canvas}{bg=paper}
+\setbeamercolor{normal text}{fg=ink}
+\setbeamercolor{alerted text}{fg=teal}
+\setbeamercolor{structure}{fg=navy}
+\setbeamercolor{block title}{bg=navy,fg=white}
+\setbeamercolor{block body}{bg=slate!7,fg=ink}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+\newcommand{\stripeTR}[3]{\fill[#3] (#1,9.2) -- ++(#2,0) -- ++(4.5,-3.15) -- ++(-#2,0) -- cycle;}
+\newcommand{\stripeBL}[3]{\fill[#3] (#1,-0.2) -- ++(#2,0) -- ++(-4.5,3.15) -- ++(-#2,0) -- cycle;}
+
+\setbeamertemplate{background}{%
+  \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
+    \clip (0,0) rectangle (16,9);
+    \stripeTR{14.35}{0.45}{navy}
+    \stripeTR{15.05}{0.55}{sky}
+    \stripeTR{15.85}{0.12}{teal}
+  \end{tikzpicture}}
+
+\setbeamertemplate{frametitle}{%
+  \vspace*{0.2cm}%
+  \begin{beamercolorbox}[wd=\paperwidth,leftskip=0.9cm]{frametitle}
+    {\usebeamercolor[fg]{structure}\fontseries{eb}\selectfont\Large\insertframetitle}\par
+    \vspace{3pt}
+    \begin{tikzpicture}
+      \fill[teal] (0,0) rectangle (1.4,0.09);
+      \fill[sky] (1.55,0) rectangle (1.95,0.09);
+    \end{tikzpicture}
+  \end{beamercolorbox}}
+
+\setbeamertemplate{footline}{%
+  \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
+    % Finalized senior-inspired information bar: footer uses blues only.
+    \fill[navy] (0,0) rectangle (16,0.58);
+    \fill[steel] (0,0.58) rectangle (3.55,0.64);
+    \fill[sky]  (3.55,0.58) rectangle (16,0.64);
+    \draw[white,opacity=0.22,line width=0.45pt]
+      (3.55,0.10) -- (3.55,0.48)
+      (12.55,0.10) -- (12.55,0.48);
+    \node[anchor=west,text=white,font=\scriptsize\bfseries] at (0.72,0.29)
+      {B2 \;\textbullet\; GROUP 2};
+    \node[text=white,font=\scriptsize\bfseries] at (8.05,0.29)
+      {VARIATIONAL AUTOENCODER};
+    \node[anchor=east,text=white,font=\scriptsize] at (14.55,0.29)
+      {CSE 200};
+    \node[fill=steel,rounded corners=1.5pt,inner xsep=4.5pt,inner ysep=1.6pt,
+          text=white,font=\tiny\bfseries] at (15.35,0.29)
+      {\insertframenumber/\inserttotalframenumber};
+  \end{tikzpicture}}
+
+% ---------- Page canvas: draw in page coordinates (16 x 9 cm) ----------
+% content zone ~ x 0.9..15.1, y 0.9..7.3
+\newenvironment{canvas}
+  {\begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]}
+  {\end{tikzpicture}}
+
+% ---------- Reusable drawings ----------
+% digit "image" thumbnail:  \thumb[opts]{pos}{digit}
+\newcommand{\thumb}[3][]{%
+  \node[draw=slate!50,line width=0.5pt,fill=white,minimum size=0.52cm,inner sep=0pt,text=ink,
+        font=\small\fontseries{eb}\selectfont,#1] at (#2) {#3};}
+
+% latent-space clusters. #1 = cloud radius (0 = plain points), #2 = scale of cluster centres
+\newcommand{\clusters}[2]{%
+  \pgfmathsetseed{4242}%
+  \foreach \cx/\cy/\sx/\sy/\rot/\col in {
+      -2.35/ 1.55/0.34/0.20/ 20/navy,
+      -0.25/ 1.85/0.20/0.40/-25/teal,
+       2.20/ 1.20/0.40/0.22/ 40/steel,
+      -2.05/-1.35/0.30/0.28/  0/slate,
+       0.60/-0.45/0.26/0.36/ 60/teal!55!white,
+       2.40/-1.65/0.44/0.19/-15/steel!55!white}{%
+    \foreach \k in {1,...,22}{%
+      \pgfmathsetmacro\rr{min(2.1,sqrt(-2*ln(max(rnd,0.005))))}%
+      \pgfmathsetmacro\tt{360*rnd}%
+      \pgfmathsetmacro\px{#2*\cx + cos(\rot)*\sx*\rr*cos(\tt) - sin(\rot)*\sy*\rr*sin(\tt)}%
+      \pgfmathsetmacro\py{#2*\cy + sin(\rot)*\sx*\rr*cos(\tt) + cos(\rot)*\sy*\rr*sin(\tt)}%
+      \ifdim #1pt>0pt \fill[\col,opacity={0.024/#1}] (\px,\py) circle (#1); \fi
+      \fill[\col] (\px,\py) circle (0.055);
+    }}}
+% digit labels next to the clusters (#1 = centre scale)
+\newcommand{\clusterlabels}[1]{%
+  \foreach \cx/\cy/\dx/\dy/\d in {-2.35/1.55/-0.95/0.25/0, -0.25/1.85/0.55/0.3/1, 2.20/1.20/0.2/0.8/7,
+                                  -2.05/-1.35/0.9/-0.5/3, 0.60/-0.45/-0.8/-0.5/5, 2.40/-1.65/-0.15/-0.75/9}
+    {\thumb[minimum size=0.42cm,font=\scriptsize\fontseries{eb}\selectfont]{#1*\cx+\dx,#1*\cy+\dy}{\d}}}
+% empty latent panel, centred at the current origin (7.4 x 5.9 cm)
+\newcommand{\latentpanel}{%
+  \fill[white] (-3.7,-2.95) rectangle (3.7,2.95);
+  \begin{scope}
+    \clip (-3.7,-2.95) rectangle (3.7,2.95);
+    \draw[slate!12,line width=0.4pt,step=0.5] (-4,-3) grid (4,3);
+    \draw[slate!30,line width=0.5pt] (-3.7,0) -- (3.7,0) (0,-2.95) -- (0,2.95);
+  \end{scope}
+  \draw[slate!50,line width=0.5pt] (-3.7,-2.95) rectangle (3.7,2.95);
+  \node[lbl,anchor=north east] at (3.7,-2.95) {$z_1$};
+  \node[lbl,anchor=north east] at (-3.7,2.95) {$z_2$};
+  \node[anchor=north west,font=\scriptsize,text=slate] at (-3.62,2.9) {bottleneck (latent) space};}
+
+% number line on [-1,1]:  \numline{pos}{width}
+\newcommand{\numline}[2]{%
+  \draw[slate!70,line width=0.5pt,<->,>={Stealth[length=1.2mm]}] ($(#1)+(-#2/2-0.18,0)$) -- ($(#1)+(#2/2+0.18,0)$);
+  \foreach \v in {-1,0,1}
+    \draw[slate!70,line width=0.5pt] ($(#1)+(\v*#2/2,0.05)$) -- ++(0,-0.1)
+       node[below=-1.5pt,font=\tiny,text=slate] {$\v$};}
+% gaussian on that number line:  \gauss{pos}{width}{mu}{sigma}{height}
+\newcommand{\gauss}[5]{%
+  \begin{scope}[shift={(#1)}]
+    \fill[navy!10] plot[domain={max(-1,#3-3*#4)}:{min(1,#3+3*#4)},samples=45]
+          ({\x*#2/2},{#5*exp(-((\x-(#3))^2)/(2*#4*#4))}) -- cycle;
+    \draw[navy,line width=0.8pt] plot[domain={max(-1,#3-3*#4)}:{min(1,#3+3*#4)},samples=45]
+          ({\x*#2/2},{#5*exp(-((\x-(#3))^2)/(2*#4*#4))});
+  \end{scope}}
+
+% face "photo":  \face{pos}{scale}{smile -1..1}{skin}{hair}{style 0 short|1 long|2 curly|3 beard}{bg}{shirt}
+\newcommand{\face}[8]{%
+  \begin{scope}[shift={(#1)},scale=#2]
+    \fill[#7] (-0.6,-0.6) rectangle (0.6,0.6);
+    \begin{scope}
+      \clip (-0.6,-0.6) rectangle (0.6,0.6);
+      \ifcase#6\relax
+      \or \fill[#5] (-0.38,-0.62) -- (-0.4,0.06) arc (180:0:0.4) -- (0.38,-0.62) -- cycle;
+      \or \foreach \a in {0,30,...,330} \fill[#5] ($(0,0.08)+(\a:0.3)$) circle (0.15);
+      \fi
+      \fill[#8] (-0.56,-0.62) .. controls (-0.52,-0.42) and (-0.32,-0.36) .. (0,-0.36)
+                .. controls (0.32,-0.36) and (0.52,-0.42) .. (0.56,-0.62) -- cycle;
+      \fill[#4!85!ink] (-0.09,-0.42) rectangle (0.09,-0.2);
+      \fill[#4] (0,0.02) ellipse (0.26 and 0.32);
+      \ifnum#6=1\relax\else
+        \fill[#5] (-0.27,0.06) .. controls (-0.3,0.44) and (0.3,0.44) .. (0.27,0.06)
+                  .. controls (0.18,0.22) and (-0.12,0.26) .. (-0.27,0.06) -- cycle;
+      \fi
+      \ifnum#6=1\relax
+        \fill[#5] (-0.26,0.08) .. controls (-0.22,0.4) and (0.24,0.4) .. (0.26,0.08)
+                  .. controls (0.1,0.26) and (-0.1,0.26) .. (-0.26,0.08) -- cycle;
+      \fi
+      \ifnum#6=3\relax
+        \fill[#5] (-0.26,0.0) .. controls (-0.25,-0.42) and (0.25,-0.42) .. (0.26,0.0)
+                  -- (0.19,-0.02) .. controls (0.14,-0.2) and (-0.14,-0.2) .. (-0.19,-0.02) -- cycle;
+      \fi
+      \fill[ink] (-0.1,0.07) circle (0.028) (0.1,0.07) circle (0.028);
+      \draw[ink!70,line width=0.5pt] (-0.15,0.15) -- (-0.05,0.16) (0.05,0.16) -- (0.15,0.15);
+      \ifnum#6=3\relax\def\mouthcol{white}\else\def\mouthcol{ink}\fi
+      \draw[\mouthcol,line width=0.8pt,line cap=round]
+            (-0.1,-0.13) .. controls (-0.04,{-0.13-0.11*(#3)}) and (0.04,{-0.13-0.11*(#3)}) .. (0.1,-0.13);
+    \end{scope}
+    \draw[slate!50,line width=0.5pt] (-0.6,-0.6) rectangle (0.6,0.6);
+  \end{scope}}
+% the recurring bearded person used on the VAE slides
+\newcommand{\person}[2]{\face{#1}{#2}{0.75}{teal!55!white}{slate!55!ink}{3}{steel!10}{steel!60}}
+
+% garbled decoder output (a "meaningless" image)
+\newcommand{\garbled}[2]{%
+  \begin{scope}[shift={(#1)}]
+    \fill[white] (-#2/2,-#2/2) rectangle (#2/2,#2/2);
+    \pgfmathsetseed{77}
+    \foreach \i in {0,...,7}{\foreach \j in {0,...,7}{%
+      \pgfmathsetmacro\g{int(85*rnd*rnd)}%
+      \fill[ink!\g] ({-#2/2+\i*#2/8},{-#2/2+\j*#2/8}) rectangle ++(#2/8,#2/8);}}
+    \node[text=ink,opacity=0.35,font=\Large\fontseries{eb}\selectfont] at (-0.05,0) {3};
+    \node[text=ink,opacity=0.3,rotate=35,font=\Large\fontseries{eb}\selectfont] at (0.08,0.02) {7};
+    \draw[slate!50,line width=0.5pt] (-#2/2,-#2/2) rectangle (#2/2,#2/2);
+  \end{scope}}
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\title{Variational Autoencoder}
+% slides: no hyphenation, ragged text
+\hyphenpenalty=10000 \exhyphenpenalty=10000
+
+
+% ---------- Part-2 extra styles ----------
+\tikzset{
+  fwd/.style={->,line width=0.8pt,draw=slate},
+  grad/.style={->,line width=0.9pt,draw=navy,dash pattern=on 2.6pt off 1.8pt},
+  panel/.style={rectangle,rounded corners=4pt,draw=slate!45,line width=0.6pt,fill=white},
+  mathbox/.style={rectangle,rounded corners=4pt,draw=navy!45,line width=0.7pt,fill=navy!5,inner sep=6pt},
+  keybox/.style={rectangle,rounded corners=4pt,draw=teal,line width=1.0pt,fill=teal!6,inner sep=6pt},
+  note/.style={font=\footnotesize,text=ink,align=left},
+  badge/.style={circle,text=white,font=\scriptsize\bfseries,inner sep=1.6pt},
+}
+
+% ---------- Part-2 reusable drawings ----------
+% a "7"-ish pixel image:  \digitg{cell size}{colour}   (origin = lower-left)
+\newcommand{\digitg}[2]{%
+  \foreach \x/\y in {1/7,2/7,3/7,4/7,5/6,5/5,4/4,3/4,2/3,1/2,1/1,2/1,3/1,4/1,5/1,0/6,2/8,3/8,1/8,5/7}
+    \fill[#2] (\x*#1,\y*#1) rectangle ++(#1,#1);
+  \draw[slate!50,line width=0.5pt] (0,0) rectangle (7*#1,10*#1);}
+% the same image, faded, with a few wrong cells (a reconstruction)
+\newcommand{\digitgr}[1]{%
+  \foreach \x/\y in {1/7,2/7,3/7,4/7,5/6,5/5,4/4,3/4,2/3,1/2,1/1,2/1,3/1,4/1,5/1,0/6,2/8,3/8,1/8,5/7}
+    \fill[ink!60] (\x*#1,\y*#1) rectangle ++(#1,#1);
+  \foreach \x/\y in {0/7,4/5,2/2,5/2,3/6}
+    \fill[slate!25] (\x*#1,\y*#1) rectangle ++(#1,#1);
+  \draw[slate!50,line width=0.5pt] (0,0) rectangle (7*#1,10*#1);}
+% mini latent panel centred on the current origin: \mpanel{halfwidth}{halfheight}
+\newcommand{\mpanel}[2]{%
+  \fill[white] (-#1,-#2) rectangle (#1,#2);
+  \begin{scope}
+    \clip (-#1,-#2) rectangle (#1,#2);
+    \draw[slate!12,line width=0.4pt,step=0.4] (-4,-4) grid (4,4);
+    \draw[slate!30,line width=0.5pt] (-#1,0) -- (#1,0) (0,-#2) -- (0,#2);
+  \end{scope}
+  \draw[slate!50,line width=0.5pt] (-#1,-#2) rectangle (#1,#2);}
+% latent scatter: \scat{centre scale}{sigma}{seed}
+\newcommand{\scat}[3]{%
+  \pgfmathsetseed{#3}%
+  \foreach \cx/\cy/\col in {0/1.5/navy, 1.4/0.45/teal, 0.9/-1.25/steel,
+                            -0.95/-1.2/slate, -1.4/0.5/teal!55!white}{%
+    \foreach \k in {1,...,26}{%
+      \pgfmathsetmacro\rr{min(2.2,sqrt(-2*ln(max(rnd,0.005))))}%
+      \pgfmathsetmacro\tt{360*rnd}%
+      \fill[\col] ({#1*\cx+#2*\rr*cos(\tt)},{#1*\cy+#2*\rr*sin(\tt)}) circle (0.05);}}}
+% coloured gaussian: \gaussc{pos}{width}{mu}{sigma}{height}{colour}
+\newcommand{\gaussc}[6]{%
+  \begin{scope}[shift={(#1)}]
+    \fill[#6!12] plot[domain={max(-1,#3-3*#4)}:{min(1,#3+3*#4)},samples=45]
+          ({\x*#2/2},{#5*exp(-((\x-(#3))^2)/(2*#4*#4))}) -- cycle;
+    \draw[#6,line width=0.8pt] plot[domain={max(-1,#3-3*#4)}:{min(1,#3+3*#4)},samples=45]
+          ({\x*#2/2},{#5*exp(-((\x-(#3))^2)/(2*#4*#4))});
+  \end{scope}}
+\begin{document}
+
+% =================================================================
+%  PAGE 1 — the block diagram (senior "High Level Block Diagram", muted)
+%  built one stage per click, like the senior deck
+% =================================================================
+\begin{frame}{The VAE in One Diagram}
+\begin{canvas}
+  \node[anchor=west,font=\footnotesize,text=slate] at (0.95,6.95)
+       {Member 1 showed the idea. Here are the same three stages with the symbols we use from now on.};
+  \begin{scope}[shift={(1.05,4.95)}]
+    % ---- step 1: input x + encoder ----
+    \fill[ink!14] (0,-1.05) rectangle (0.55,1.05);
+    \draw[slate,line width=0.8pt] (0,-1.05) rectangle (0.55,1.05);
+    \node[lbl,text=ink] at (0.28,-1.4) {$x$};
+    \draw[fwd] (0.68,0) -- (1.12,0);
+    \node[enc] (enc) at (1.95,0) {$h_\phi$};
+    \node[lbl] at (1.95,-1.4) {encoder};
+    % ---- step 2: the two heads ----
+    \begin{scope}[visible on=<2->]
+      \node[param,minimum width=1.55cm] (mu) at (3.78,0.78) {$\bm{\mu}$};
+      \node[param,minimum width=1.55cm] (lsg) at (3.78,-0.78) {$\log\bm{\sigma}^2$};
+      \draw[fwd] (enc.east) ++(0,0.32) -- (mu.west);
+      \draw[fwd] (enc.east) ++(0,-0.32) -- (lsg.west);
+      \draw[steel,line width=0.7pt,dash pattern=on 3pt off 2pt,rounded corners=4pt] (1.08,-1.72) rectangle (4.72,1.72);
+      \node[badge,fill=steel] at (1.33,1.47) {1};
+    \end{scope}
+    % ---- step 3: the two numbers become one distribution ----
+    \begin{scope}[visible on=<3->]
+      \node[rectangle,rounded corners=3pt,draw=navy,line width=0.8pt,fill=navy!6,text=navy,
+            inner sep=5pt,font=\footnotesize] (nd) at (6.65,0)
+           {$\mathcal{N}\!\left(\bm{\mu},\,\text{diag}(\bm{\sigma}^2)\right)$};
+      \draw[slate,line width=0.7pt] (mu.east)  -- (4.88,0.78)  -- (4.88,0);
+      \draw[slate,line width=0.7pt] (lsg.east) -- (4.88,-0.78) -- (4.88,0);
+      \fill[slate] (4.88,0) circle (0.05);
+      \draw[fwd] (4.88,0) -- (nd.west);
+    \end{scope}
+    % ---- step 4: draw z out of it ----
+    \begin{scope}[visible on=<4->]
+      \node[circle,fill=navy!8,draw=navy,line width=0.8pt,text=navy,minimum size=0.85cm,font=\large] (z) at (8.95,0) {$z$};
+      \draw[fwd] (nd.east) -- (z.west) node[midway,above,font=\scriptsize,text=slate] {$\sim$};
+      \draw[navy,line width=0.7pt,dash pattern=on 3pt off 2pt,rounded corners=4pt] (5.00,-1.72) rectangle (9.50,1.72);
+      \node[badge,fill=navy] at (5.25,1.47) {2};
+    \end{scope}
+    % ---- step 5: decoder back to an image ----
+    \begin{scope}[visible on=<5->]
+      \node[dec] (dec) at (10.85,0) {$f_\theta$};
+      \node[lbl] at (10.85,-1.4) {decoder};
+      \draw[fwd] (z.east) -- (dec.west);
+      \fill[ink!9] (12.2,-1.05) rectangle (12.75,1.05);
+      \draw[slate,line width=0.8pt] (12.2,-1.05) rectangle (12.75,1.05);
+      \node[lbl,text=ink] at (12.48,-1.4) {$\hat{x}$};
+      \draw[fwd] (dec.east) -- (12.13,0);
+      \draw[teal,line width=0.7pt,dash pattern=on 3pt off 2pt,rounded corners=4pt] (9.70,-1.72) rectangle (12.90,1.72);
+      \node[badge,fill=teal] at (9.95,1.47) {3};
+    \end{scope}
+  \end{scope}
+  % ---- captions under the diagram, one per stage ----
+  \node[anchor=north west,font=\scriptsize,text=ink,align=left,text width=4.9cm,visible on=<2->] at (1.1,3.02)
+       {\textbf{\textcolor{steel}{1 \; Encoder}}\\[1pt] $x \mapsto (\bm{\mu},\log\bm{\sigma}^2)$\\[1pt] two vectors, not a point};
+  \node[anchor=north west,font=\scriptsize,text=ink,align=left,text width=4.4cm,visible on=<4->] at (6.2,3.02)
+       {\textbf{\textcolor{navy}{2 \; Sampling}}\\[1pt] $z$ is drawn, not read off};
+  \node[anchor=north west,font=\scriptsize,text=ink,align=left,text width=3.7cm,visible on=<5->] at (11.2,3.02)
+       {\textbf{\textcolor{teal}{3 \; Decoder}}\\[1pt] $z \mapsto \hat{x}$, a full image again};
+  % ---- roadmap banner ----
+  \begin{scope}[visible on=<6->]
+    \fill[navy!6,rounded corners=4pt] (1.1,0.98) rectangle (14.9,1.78);
+    \draw[navy,line width=0.8pt,rounded corners=4pt] (1.1,0.98) rectangle (14.9,1.78);
+    \node[font=\footnotesize,text=ink] at (8.0,1.38)
+      {Still to answer: why \textbf{two} heads? \quad why \textbf{sampling} breaks training?
+       \quad where the \textbf{loss} comes from.};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 2 — encoder outputs a distribution (senior neural-net view)
+% =================================================================
+\begin{frame}{The Encoder Outputs a Distribution}
+\begin{canvas}
+  % ================= neural view =================
+  \begin{scope}[shift={(1.35,4.35)}]
+    % encoder layers 5 - 4 - 3
+    \foreach \n/\lx/\nm in {5/0/a, 4/1.0/b, 3/2.0/c}{
+      \foreach \i in {1,...,\n}
+        \node[neuron,draw=steel,fill=steel!12,minimum size=0.42cm] (\nm-\i) at (\lx,{(\n+1)/2*0.5-\i*0.5}) {};}
+    \foreach \i in {1,...,5}\foreach \j in {1,...,4} \draw[slate!30,line width=0.35pt] (a-\i) -- (b-\j);
+    \foreach \i in {1,...,4}\foreach \j in {1,...,3} \draw[slate!30,line width=0.35pt] (b-\i) -- (c-\j);
+    \foreach \i in {1,...,5} \node[left=1pt of a-\i,font=\tiny,text=ink] {$x_\i$};
+    \node[anchor=south,font=\scriptsize\bfseries,text=steel] at (1.0,1.6) {encoder $\phi$};
+    % ---- step 2: mu / log sigma^2 heads ----
+    \begin{scope}[visible on=<2->]
+      \foreach \i in {1,2} \node[neuron,draw=navy,fill=navy!10,minimum size=0.42cm] (m-\i) at (3.15,{1.4-0.46*\i}) {};
+      \foreach \i in {1,2} \node[neuron,draw=slate,fill=slate!12,minimum size=0.42cm] (s-\i) at (3.15,{-0.48-0.46*\i}) {};
+      \draw[navy,line width=0.7pt,rounded corners=3pt]  (2.87,0.20) rectangle (3.43,1.22);
+      \draw[slate,line width=0.7pt,rounded corners=3pt] (2.87,-1.68) rectangle (3.43,-0.66);
+      \node[font=\small,text=navy]  at (3.15,1.46) {$\bm{\mu}$};
+      \node[font=\small,text=slate] at (3.15,-1.94) {$\log\bm{\sigma}^2$};
+      \foreach \i in {1,...,3}\foreach \j in {1,2}{
+        \draw[slate!30,line width=0.35pt] (c-\i) -- (m-\j);
+        \draw[slate!30,line width=0.35pt] (c-\i) -- (s-\j);}
+    \end{scope}
+    % ---- step 5: sample + decoder ----
+    \begin{scope}[visible on=<5->]
+      \foreach \i in {1,2} \node[neuron,draw=navy,fill=white,minimum size=0.42cm] (p-\i) at (4.3,{0.46-0.46*\i}) {};
+      \draw[navy,line width=0.7pt,dash pattern=on 2.5pt off 1.6pt,rounded corners=3pt] (4.02,-0.74) rectangle (4.58,0.28);
+      \node[font=\scriptsize,text=navy] at (4.3,0.52) {sample $z$};
+      \foreach \j in {1,2}{\draw[slate!30,line width=0.35pt] (m-\j) -- (p-1);
+                           \draw[slate!30,line width=0.35pt] (s-\j) -- (p-2);}
+      \foreach \n/\lx/\nm in {3/5.5/d, 4/6.5/e, 5/7.5/f}{
+        \foreach \i in {1,...,\n}
+          \node[neuron,draw=teal,fill=teal!10,minimum size=0.42cm] (\nm-\i) at (\lx,{(\n+1)/2*0.5-\i*0.5}) {};}
+      \foreach \i in {1,...,3}\foreach \j in {1,...,4} \draw[slate!30,line width=0.35pt] (d-\i) -- (e-\j);
+      \foreach \i in {1,...,4}\foreach \j in {1,...,5} \draw[slate!30,line width=0.35pt] (e-\i) -- (f-\j);
+      \foreach \i in {1,2}\foreach \j in {1,...,3} \draw[slate!30,line width=0.35pt] (p-\i) -- (d-\j);
+      \foreach \i in {1,...,5} \node[right=1pt of f-\i,font=\tiny,text=ink] {$\hat{x}_\i$};
+      \node[anchor=south,font=\scriptsize\bfseries,text=teal] at (6.5,1.6) {decoder $\theta$};
+    \end{scope}
+  \end{scope}
+  % ================= right column =================
+  \node[anchor=north west,note,text width=5.2cm,visible on=<2->] at (9.7,7.15)
+       {The same network as an autoencoder, except the bottleneck is split into \textbf{\textcolor{navy}{two}} vectors
+        \textemdash\ and two numbers per dimension \emph{are} a curve:};
+  % ---- step 3: the two numbers *are* a curve ----
+  \begin{scope}[shift={(11.45,4.18)},visible on=<3->]
+    \numline{0,0}{2.8}
+    \gauss{0,0}{2.8}{0.25}{0.3}{0.86}
+    \draw[navy!70,line width=0.6pt,dash pattern=on 2pt off 1.5pt] (0.375,0) -- (0.375,0.86);
+    \node[font=\scriptsize,text=navy] at (0.375,1.08) {$\mu$};
+    \draw[slate,line width=0.6pt,<->,>={Stealth[length=1.1mm]}] (0.375,0.48) -- (0.825,0.48);
+    \node[font=\scriptsize,text=slate,anchor=west] at (0.87,0.48) {$\sigma$};
+    \node[font=\scriptsize,text=slate,anchor=north] at (0,-0.28) {one latent dimension};
+  \end{scope}
+  % ---- step 4: the formula + why log ----
+  \node[mathbox,anchor=north west,text width=5.1cm,align=left,font=\footnotesize,visible on=<4->] at (9.7,3.42)
+       {$q_\phi(z\mid x)=\mathcal{N}\!\left(\bm{\mu}_\phi(x),\,\text{diag}(\bm{\sigma}^2_\phi(x))\right)$};
+  \node[anchor=north west,note,text width=5.2cm,visible on=<4->] at (9.7,2.62)
+       {Why \textbf{log} variance? A network output can be any real number, but $\sigma$ must stay
+        positive: \; $\sigma=\exp\!\left(\tfrac12\log\sigma^2\right)>0$};
+  \node[keybox,anchor=south west,text width=7.8cm,align=left,font=\footnotesize,visible on=<6->] at (1.1,0.98)
+       {Every image now owns a small cloud in latent space \textemdash\ but the
+        \textbf{\textcolor{navy}{sample}} step is about to cause trouble.};
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 3 — why the sample blocks training
+% =================================================================
+\begin{frame}{Why Sampling Breaks Training}
+\begin{canvas}
+  \begin{scope}[shift={(2.0,6.05)}]
+    % ---- step 1: mu, sigma -> random draw -> z ----
+    \node[param,minimum width=1.1cm] (mu) at (0,0.7) {$\bm{\mu}$};
+    \node[param,minimum width=1.1cm,draw=slate] (sg) at (0,-0.7) {$\bm{\sigma}$};
+    \node[circle,draw=navy,line width=0.9pt,fill=white,minimum size=1.15cm,font=\scriptsize,text=navy,
+          align=center,inner sep=0pt] (smp) at (2.35,0) {random\\draw};
+    \draw[fwd] (mu.east) -| (1.5,0.3) -- (smp.west);
+    \draw[fwd] (sg.east) -| (1.5,-0.3) -- (smp.west);
+    \node[circle,fill=navy!8,draw=navy,line width=0.8pt,text=navy,minimum size=0.8cm] (z) at (4.6,0) {$z$};
+    \draw[fwd] (smp) -- (z);
+    % ---- step 2: decoder -> x-hat -> loss ----
+    \begin{scope}[visible on=<2->]
+      \node[dec,minimum width=1.9cm,minimum height=1.3cm] (dec) at (6.7,0) {$f_\theta$};
+      \draw[fwd] (z) -- (dec.west);
+      \fill[ink!9] (8.1,-0.75) rectangle (8.6,0.75);
+      \draw[slate,line width=0.8pt] (8.1,-0.75) rectangle (8.6,0.75);
+      \node[lbl,text=ink] at (8.35,-1.12) {$\hat{x}$};
+      \draw[fwd] (dec.east) -- (8.03,0);
+      \node[rectangle,rounded corners=3pt,draw=teal,line width=0.9pt,fill=teal!8,text=teal!70!black,
+            font=\small\bfseries,inner sep=5pt] (loss) at (10.0,0) {$\mathcal{L}$};
+      \draw[fwd] (8.67,0) -- (loss.west);
+      \node[lbl,anchor=west,align=left] at (10.55,0) {loss we want\\to minimise};
+    \end{scope}
+    % ---- step 3: gradient walks back as far as z ----
+    \begin{scope}[visible on=<3->]
+      \draw[grad] (loss.south) |- (9.2,-1.8) -- (7.7,-1.8);
+      \draw[grad] (7.4,-1.8) -- (5.3,-1.8);
+      \draw[grad] (5.0,-1.8) -- (3.4,-1.8);
+      \node[anchor=south,font=\scriptsize,text=navy] at (7.1,-1.72) {gradient travels back fine};
+    \end{scope}
+    % ---- step 4: and stops dead at the draw ----
+    \begin{scope}[visible on=<4->]
+      \draw[grad,draw=slate] (3.1,-1.8) -- (2.35,-1.8) -- (2.35,-0.68);
+      \draw[slate,line width=1.8pt] (1.85,-1.35) -- (2.9,-0.8);
+      \node[font=\footnotesize,text=slate] at (1.52,-1.55) {\xmark};
+      \draw[slate,line width=0.7pt,dash pattern=on 2pt off 1.5pt] (0,-1.05) -- (0,-1.6);
+    \end{scope}
+  \end{scope}
+  % ---- explanation ----
+  \node[anchor=south west,note,text width=5.9cm,visible on=<4->] at (1.1,1.05)
+       {\textbf{\textcolor{slate}{No gradient reaches $\bm{\mu}$ or $\bm{\sigma}$.}}
+        \\[3pt] To train the encoder we need
+        \\[3pt] \hspace*{0.3cm}$\dfrac{\partial \mathcal{L}}{\partial \phi}
+                 = \dfrac{\partial \mathcal{L}}{\partial z}\cdot\dfrac{\partial z}{\partial \phi}$
+        \\[3pt] but drawing a random number from $\mathcal{N}(\bm{\mu},\bm{\sigma}^2)$ is a \textbf{sampling step},
+        not a function of $\bm{\mu},\bm{\sigma}$.};
+  \node[keybox,anchor=south west,text width=6.1cm,align=left,font=\footnotesize,visible on=<5->] at (8.5,1.05)
+       {$\dfrac{\partial z}{\partial \bm{\mu}}$ and $\dfrac{\partial z}{\partial \bm{\sigma}}$ are
+        \textbf{undefined} through a random draw.
+        \\[4pt] The decoder would still learn \textemdash\ the \textbf{encoder never would}.};
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 4 — the reparameterisation trick
+% =================================================================
+\begin{frame}{The Reparameterisation Trick}
+\begin{canvas}
+  % ---------------- left panel: randomness inside the path ----------------
+  \node[panel,anchor=south west,minimum width=5.9cm,minimum height=4.45cm] at (1.1,2.45) {};
+  \node[anchor=north west,font=\scriptsize\bfseries,text=slate] at (1.25,6.78) {randomness \emph{inside} the path};
+  \begin{scope}[shift={(1.85,4.95)}]
+    \node[param,minimum width=0.9cm] (mu) at (0.3,0.6) {$\bm{\mu}$};
+    \node[param,minimum width=0.9cm,draw=slate] (sg) at (0.3,-0.6) {$\bm{\sigma}$};
+    \node[circle,draw=navy,line width=0.9pt,fill=white,minimum size=1.05cm,font=\scriptsize,text=navy,
+          align=center,inner sep=0pt] (smp) at (2.35,0) {random\\draw};
+    \draw[fwd] (mu.east) -| (1.5,0.25) -- (smp.west);
+    \draw[fwd] (sg.east) -| (1.5,-0.25) -- (smp.west);
+    \node[circle,fill=navy!8,draw=navy,line width=0.8pt,text=navy,minimum size=0.75cm] (z) at (4.2,0) {$z$};
+    \draw[fwd] (smp) -- (z);
+    \draw[grad,draw=slate] (4.2,-0.45) -- (4.2,-1.15) -- (2.35,-1.15) -- (2.35,-0.6);
+    \draw[slate,line width=1.6pt] (1.9,-1.0) -- (2.8,-0.55);
+    \node[font=\footnotesize,text=slate] at (1.58,-1.2) {\xmark};
+    \node[anchor=north,font=\scriptsize,text=slate,align=center] at (2.6,-1.42) {gradient stops here};
+  \end{scope}
+  % ---------------- right panel: randomness moved outside ----------------
+  \begin{scope}[visible on=<2->]
+    \node[panel,draw=teal,line width=0.9pt,anchor=south west,minimum width=7.5cm,minimum height=4.45cm] at (7.5,2.45) {};
+    \node[anchor=north west,font=\scriptsize\bfseries,text=teal] at (7.65,6.78) {randomness moved \emph{outside}};
+  \end{scope}
+  \begin{scope}[shift={(8.15,4.95)}]
+    \begin{scope}[visible on=<2->]
+      \node[param,minimum width=0.9cm] (mu2) at (0.35,0.7) {$\bm{\mu}$};
+      \node[param,minimum width=0.9cm,draw=slate] (sg2) at (0.35,-0.7) {$\bm{\sigma}$};
+      \node[op,inner sep=1.2pt] (tim) at (2.45,-0.7) {$\odot$};
+      \node[op] (plus) at (3.85,0) {$+$};
+      \node[circle,fill=navy!8,draw=navy,line width=0.8pt,text=navy,minimum size=0.8cm] (z2) at (5.35,0) {$z$};
+      \draw[fwd] (sg2.east) -- (tim.west);
+      \draw[fwd] (mu2.east) -| (3.85,0.7) -- (plus.north);
+      \draw[fwd] (tim.east) -| (3.85,-0.7) -- (plus.south);
+      \draw[fwd] (plus.east) -- (z2.west);
+    \end{scope}
+    % epsilon enters from outside
+    \begin{scope}[visible on=<3->]
+      \begin{scope}[shift={(1.35,-1.9)}]
+        \fill[slate!10] plot[domain=-0.6:0.6,samples=31] (\x,{0.45*exp(-9*\x*\x)}) -- cycle;
+        \draw[slate,line width=0.8pt] plot[domain=-0.6:0.6,samples=31] (\x,{0.45*exp(-9*\x*\x)});
+        \draw[slate!50] (-0.7,0) -- (0.7,0);
+        \node[font=\scriptsize,text=slate,anchor=north] at (0.1,-0.08) {$\epsilon\sim\mathcal{N}(0,I)$};
+      \end{scope}
+      \draw[fwd,dashed] (2.05,-1.7) -- (2.45,-1.7) -- (tim.south);
+    \end{scope}
+    % gradients now flow
+    \begin{scope}[visible on=<4->]
+      \draw[grad] (5.35,0.45) -- (5.35,1.15) -- (0.35,1.15) -- (mu2.north);
+      \draw[grad] (5.75,0) -- (6.35,0) -- (6.35,-1.15) -- (0.35,-1.15) -- (sg2.south);
+      \node[anchor=north,font=\scriptsize,text=navy] at (3.95,-1.19) {gradients reach $\bm{\mu}$ and $\bm{\sigma}$};
+    \end{scope}
+  \end{scope}
+  % ---------------- formula banner ----------------
+  \begin{scope}[visible on=<3->]
+    \fill[teal!6,rounded corners=4pt] (1.1,1.0) rectangle (14.9,2.28);
+    \draw[teal,line width=1.0pt,rounded corners=4pt] (1.1,1.0) rectangle (14.9,2.28);
+    \node[font=\normalsize,text=ink] at (8.0,1.87)
+      {\textbf{Reparameterise:}\quad $z=\bm{\mu}+\bm{\sigma}\odot\epsilon,\qquad \epsilon\sim\mathcal{N}(0,I)$};
+    \node[font=\footnotesize,text=slate,visible on=<4->] at (8.0,1.35)
+      {Now $z$ is an ordinary function of $\bm{\mu},\bm{\sigma},\epsilon$:
+       \; $\partial z/\partial\bm{\mu}=1$, \; $\partial z/\partial\bm{\sigma}=\epsilon$ \; \textemdash\ backpropagation works.};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 5 — loss term 1: reconstruction
+% =================================================================
+\begin{frame}{Loss Term 1: Reconstruction}
+\begin{canvas}
+  \node[anchor=west,font=\footnotesize,text=slate] at (0.95,6.95)
+       {First job: whatever comes out must look like what went in.};
+  % ---- x ----
+  \begin{scope}[shift={(1.2,3.95)}]
+    \digitg{0.24}{ink!85}
+    \node[lbl,text=ink] at (0.84,-0.42) {input $x$};
+  \end{scope}
+  % ---- arrow through the VAE ----
+  \begin{scope}[visible on=<2->]
+    \draw[fwd] (3.15,5.15) -- (4.5,5.15);
+    \node[anchor=south,font=\scriptsize,text=slate,align=center] at (3.82,5.25) {encode\\sample\\decode};
+  \end{scope}
+  % ---- x-hat ----
+  \begin{scope}[shift={(4.6,3.95)},visible on=<2->]
+    \digitgr{0.24}
+    \node[lbl,text=ink] at (0.84,-0.42) {output $\hat{x}$};
+  \end{scope}
+  % ---- difference ----
+  \begin{scope}[visible on=<3->]
+    \node[font=\large,text=slate] at (6.62,5.15) {$-$};
+    \begin{scope}[shift={(7.3,3.95)}]
+      \draw[slate!25,line width=0.35pt,step=0.24] (0,0) grid (1.68,2.4);
+      \foreach \x/\y in {0/7,4/5,2/2,5/2,3/6}
+        \fill[teal!45] (\x*0.24,\y*0.24) rectangle ++(0.24,0.24);
+      \draw[slate!50,line width=0.5pt] (0,0) rectangle (1.68,2.4);
+      \node[lbl] at (0.84,-0.42) {per-pixel error};
+    \end{scope}
+  \end{scope}
+  % ---- maths ----
+  \node[mathbox,anchor=north west,text width=5.2cm,align=left,font=\footnotesize,visible on=<4->] at (9.6,6.55)
+       {$\mathcal{L}_{\text{recon}}=\lVert x-\hat{x}\rVert^2
+         =\displaystyle\sum_{i}(x_i-\hat{x}_i)^2$
+        \\[5pt] \textcolor{slate}{Squared error for grey levels; \textbf{binary cross-entropy} if the pixels are $0/1$.}};
+  \node[keybox,anchor=north west,text width=5.2cm,align=left,font=\footnotesize,visible on=<5->] at (9.6,4.05)
+       {In probability form:
+        \\[4pt] $\mathcal{L}_{\text{recon}}=-\,\mathbb{E}_{q_\phi(z\mid x)}\!\left[\log p_\theta(x\mid z)\right]$
+        \\[5pt] \textcolor{slate}{i.e.\ make the decoder assign \textbf{high probability} to the image we actually fed in.}};
+  % ---- warning banner ----
+  \begin{scope}[visible on=<5->]
+    \fill[slate!8,rounded corners=4pt] (1.1,0.98) rectangle (9.0,2.35);
+    \draw[slate!60,line width=0.8pt,rounded corners=4pt] (1.1,0.98) rectangle (9.0,2.35);
+    \node[anchor=west,note,text width=7.4cm] at (1.35,1.66)
+      {This term \textbf{alone} is just an autoencoder again: it would happily push every image onto its own tiny
+       island and leave the rest of the space empty.};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 6 — loss term 2: the KL pull
+% =================================================================
+\begin{frame}{Loss Term 2: the KL Pull}
+\begin{canvas}
+  % ---- axis + prior ----
+  \begin{scope}[shift={(4.65,3.65)}]
+    \numline{0,0}{5.8}
+    \gaussc{0,0}{5.8}{0}{0.4}{1.8}{navy}
+    \node[anchor=north west,font=\scriptsize,text=navy] at (-2.9,-0.12) {prior $p(z)=\mathcal{N}(0,I)$};
+    \node[anchor=north east,font=\scriptsize,text=slate] at (2.9,-0.12) {latent axis $z$};
+    % ---- the three encoder distributions, where training starts ----
+    \only<2-4>{%
+      \gaussc{0,0}{5.8}{-0.66}{0.09}{1.8}{steel}
+      \gaussc{0,0}{5.8}{0.58}{0.08}{1.8}{teal}
+      \gaussc{0,0}{5.8}{0.24}{0.06}{1.8}{slate}
+      \node[anchor=south,font=\scriptsize,text=steel] at (-1.91,1.85) {$q_\phi(z\mid x_1)$};
+      \node[anchor=south,font=\scriptsize,text=teal] at (1.68,1.85) {$q_\phi(z\mid x_2)$};}
+    % the pull
+    \only<3-4>{%
+      \draw[grad,draw=steel] (-1.91,0.75) -- (-0.7,0.75);
+      \draw[grad,draw=teal] (1.68,0.55) -- (0.65,0.55);
+      \draw[grad,draw=slate] (0.7,0.35) -- (0.32,0.35);}
+    % ---- clicks 5 and 6: the same three clouds, actually moving in ----
+    \only<5>{%
+      \gaussc{0,0}{5.8}{-0.40}{0.14}{1.8}{steel}
+      \gaussc{0,0}{5.8}{0.36}{0.13}{1.8}{teal}
+      \gaussc{0,0}{5.8}{0.15}{0.11}{1.8}{slate}}
+    \only<6>{%
+      \gaussc{0,0}{5.8}{-0.19}{0.24}{1.8}{steel}
+      \gaussc{0,0}{5.8}{0.17}{0.23}{1.8}{teal}
+      \gaussc{0,0}{5.8}{0.06}{0.21}{1.8}{slate}}
+    \node[anchor=south,font=\scriptsize,text=slate,visible on=<5>] at (0,1.85) {\emph{pulling in\dots}};
+    \node[anchor=south,font=\scriptsize\bfseries,text=teal,visible on=<6>] at (0,1.85)
+         {now they overlap \textemdash\ no gaps left};
+  \end{scope}
+  % ---- right column ----
+  \node[anchor=north west,note,text width=6.2cm] at (8.6,6.95)
+       {Second job: keep every one of those clouds \textbf{near the same fixed prior}.};
+  \node[mathbox,anchor=north west,text width=6.2cm,align=left,font=\footnotesize,visible on=<3->] at (8.6,6.05)
+       {$\mathcal{L}_{\text{KL}}=D_{\text{KL}}\!\left(q_\phi(z\mid x)\,\|\,p(z)\right)$
+        \\[4pt] \hspace*{0.55cm}$=\displaystyle\int q_\phi(z\mid x)\log\dfrac{q_\phi(z\mid x)}{p(z)}\,dz$
+        \\[6pt] \textcolor{slate}{A distance between two distributions: $0$ when they match, larger as they drift apart.}};
+  \node[keybox,anchor=north west,text width=6.2cm,align=left,font=\footnotesize,visible on=<4->] at (8.6,3.15)
+       {For diagonal Gaussians this is a \textbf{closed form} \textemdash\ no integral to compute:
+        \\[5pt] $\mathcal{L}_{\text{KL}}=-\dfrac12\displaystyle\sum_{j=1}^{d}\left(1+\log\sigma_j^2-\mu_j^2-\sigma_j^2\right)$};
+  % ---- bottom banner ----
+  \begin{scope}[visible on=<4->]
+    \fill[navy!6,rounded corners=4pt] (1.1,0.98) rectangle (8.2,2.45);
+    \draw[navy,line width=0.8pt,rounded corners=4pt] (1.1,0.98) rectangle (8.2,2.45);
+    \node[anchor=west,note,text width=6.6cm] at (1.35,1.7)
+      {The term pulls every $\bm{\mu}$ toward $0$ and keeps every $\bm{\sigma}$ near $1$, so each cloud stays
+       \textbf{wide enough to overlap its neighbours} \textemdash\ that is what removes the gaps.};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 7 — what the two terms do to the latent space
+%  (senior slide: "Effect of KL Divergence on Latent Space")
+% =================================================================
+\begin{frame}{What the Two Terms Do to the Space}
+\begin{canvas}
+  \node[anchor=west,font=\footnotesize,text=slate] at (0.95,6.95)
+       {Same data, same network, three different losses.};
+  % ---------- A: reconstruction only ----------
+  \begin{scope}[shift={(3.1,4.62)}]
+    \mpanel{2.0}{1.6}
+    \begin{scope}
+      \clip (-2.0,-1.6) rectangle (2.0,1.6);
+      \scat{0.95}{0.09}{4242}
+      \foreach \gx/\gy/\gr in {0.0/-0.1/0.42, -1.25/1.15/0.3, 1.35/-0.5/0.34}
+        \draw[slate!60,line width=0.5pt,dash pattern=on 1.8pt off 1.5pt] (\gx,\gy) circle (\gr);
+    \end{scope}
+    \node[anchor=south,font=\scriptsize\bfseries,text=steel] at (0,1.72) {$\mathcal{L}_{\text{recon}}$ only};
+  \end{scope}
+  \node[anchor=north,font=\scriptsize,text=ink,align=center,text width=4.4cm] at (3.1,2.88)
+       {tight islands, wide \textbf{empty gaps} \textemdash\ decoding a gap gives nonsense};
+  % ---------- B: KL only ----------
+  \begin{scope}[shift={(8.0,4.62)},visible on=<2->]
+    \mpanel{2.0}{1.6}
+    \begin{scope}
+      \clip (-2.0,-1.6) rectangle (2.0,1.6);
+      \scat{0}{0.42}{99}
+      \draw[navy,line width=0.7pt,dash pattern=on 2pt off 1.6pt] (0,0) circle (1.0);
+    \end{scope}
+    \node[anchor=south,font=\scriptsize\bfseries,text=navy] at (0,1.72) {$\mathcal{L}_{\text{KL}}$ only};
+  \end{scope}
+  \node[anchor=north,font=\scriptsize,text=ink,align=center,text width=4.4cm,visible on=<2->] at (8.0,2.88)
+       {one blob, perfectly smooth \textemdash\ but every $z$ decodes to the \textbf{same blur}};
+  % ---------- C: both ----------
+  \begin{scope}[shift={(12.9,4.62)},visible on=<3->]
+    \mpanel{2.0}{1.6}
+    \begin{scope}
+      \clip (-2.0,-1.6) rectangle (2.0,1.6);
+      \scat{0.72}{0.33}{7}
+    \end{scope}
+    \node[anchor=south,font=\scriptsize\bfseries,text=teal] at (0,1.72) {both terms};
+  \end{scope}
+  \node[anchor=north,font=\scriptsize,text=ink,align=center,text width=4.4cm,visible on=<3->] at (12.9,2.88)
+       {clusters that \textbf{touch}: separable, and no dead space left};
+  % ---------- banner ----------
+  \begin{scope}[visible on=<4->]
+    \fill[teal!6,rounded corners=4pt] (1.1,0.98) rectangle (14.9,2.12);
+    \draw[teal,line width=1.0pt,rounded corners=4pt] (1.1,0.98) rectangle (14.9,2.12);
+    \node[font=\small,text=ink] at (8.0,1.55)
+      {$\mathcal{L}_{\text{VAE}}=\mathcal{L}_{\text{recon}}+\beta\,\mathcal{L}_{\text{KL}}$
+       \quad\textemdash\quad the two terms pull against each other; $\beta$ decides who wins};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 8 — the quantity we cannot compute, and the bound below it
+% =================================================================
+\begin{frame}{What We Cannot Compute: the Bound Below It}
+\begin{canvas}
+  \node[mathbox,anchor=north west,text width=7.2cm,align=left,font=\footnotesize] at (1.1,7.25)
+       {What we would \emph{like} to maximise:
+        \\[4pt] \hspace*{0.3cm}$\log p_\theta(x)=\log\displaystyle\int p_\theta(x\mid z)\,p(z)\,dz$};
+  \node[anchor=north west,note,text width=6.1cm] at (8.8,7.2)
+       {\textcolor{slate}{\xmark} \; One integral over \textbf{every possible} $z$. Not computable \textemdash\ so we maximise a
+        \textbf{lower bound} instead.};
+  % ---------- the bar: bound + gap = the true log-likelihood ----------
+  \begin{scope}[visible on=<2->]
+    \fill[navy!12] (2.4,4.10) rectangle (10.4,4.85);
+    \draw[navy,line width=0.8pt] (2.4,4.10) rectangle (10.4,4.85);
+    \fill[slate!12] (10.4,4.10) rectangle (13.4,4.85);
+    \draw[slate!70,line width=0.8pt] (10.4,4.10) rectangle (13.4,4.85);
+    \node[font=\small\bfseries,text=navy] at (6.4,4.47) {ELBO};
+    \node[font=\scriptsize,text=slate] at (11.9,4.47) {gap $\geq 0$};
+    \draw[decorate,decoration={brace,amplitude=4pt},slate,line width=0.7pt] (2.4,4.99) -- (13.4,4.99);
+    \node[anchor=south,font=\small,text=ink] at (7.9,5.12) {$=\log p_\theta(x)$};
+  \end{scope}
+  \node[anchor=north east,font=\scriptsize,text=slate,visible on=<3->] at (13.4,3.96)
+       {gap $=D_{\text{KL}}\!\left(q_\phi(z\mid x)\,\|\,p_\theta(z\mid x)\right)$};
+  \node[anchor=north west,note,text width=12.4cm,visible on=<3->] at (1.6,3.10)
+       {The gap is another KL: how wrong the encoder's guess is. Push the \textbf{ELBO} up and $\log p_\theta(x)$ has
+        to come up with it \textemdash\ that is the whole trick.};
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 9 — the bound IS the two terms we already built
+% =================================================================
+\begin{frame}{The Bound Is Exactly Our Two Terms}
+\begin{canvas}
+  \node[keybox,anchor=north west,text width=12.9cm,align=center,font=\footnotesize] at (1.55,7.15)
+       {$\text{ELBO}=\underbrace{\mathbb{E}_{q_\phi}\!\left[\log p_\theta(x\mid z)\right]}_{\textbf{page 5: reconstruction}}
+         \;-\;\underbrace{D_{\text{KL}}\!\left(q_\phi(z\mid x)\,\|\,p(z)\right)}_{\textbf{page 6: KL pull}}$};
+  \node[anchor=north west,note,text width=12.9cm,visible on=<2->] at (1.55,5.05)
+       {Nothing new to invent: the two terms we just built \textbf{are} the bound. And maximising it is the same as
+        minimising the loss we train on, $\mathcal{L}_{\text{VAE}}=-\,\text{ELBO}$.};
+  % ---------- training raises the bound ----------
+  \begin{scope}[visible on=<3->]
+    \fill[navy!12] (3.0,3.30) rectangle (10.4,3.90);
+    \draw[navy,line width=0.8pt] (3.0,3.30) rectangle (10.4,3.90);
+    \fill[slate!12] (10.4,3.30) rectangle (13.4,3.90);
+    \draw[slate!70,line width=0.8pt] (10.4,3.30) rectangle (13.4,3.90);
+    \node[font=\scriptsize,text=navy] at (6.7,3.60) {ELBO};
+    \node[anchor=east,font=\footnotesize,text=slate] at (2.85,3.60) {start};
+    \fill[navy!12] (3.0,2.30) rectangle (12.7,2.90);
+    \draw[navy,line width=0.8pt] (3.0,2.30) rectangle (12.7,2.90);
+    \fill[slate!12] (12.7,2.30) rectangle (13.4,2.90);
+    \draw[slate!70,line width=0.8pt] (12.7,2.30) rectangle (13.4,2.90);
+    \node[font=\scriptsize,text=navy] at (7.85,2.60) {ELBO after training};
+    \node[anchor=east,font=\footnotesize,text=slate] at (2.85,2.60) {later};
+    \node[anchor=west,font=\scriptsize,text=slate] at (13.5,2.60) {gap shrinks};
+    \node[anchor=north west,note,text width=12.4cm] at (1.6,1.95)
+      {As $q_\phi(z\mid x)$ gets closer to the truth the grey gap shrinks, the bound rises, and so does the real
+       likelihood $\log p_\theta(x)$.};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 10 — one training step, end to end
+%  the whole pipeline is rebuilt one piece per click
+% =================================================================
+\begin{frame}{One Training Step, End to End}
+\begin{canvas}
+  \begin{scope}[shift={(1.45,5.20)}]
+    % ---- step 1: the image goes in ----
+    \begin{scope}[shift={(0,-0.6)}]
+      \digitg{0.12}{ink!85}
+      \node[lbl,font=\scriptsize] at (0.42,-0.32) {$x$};
+    \end{scope}
+    \draw[fwd] (0.95,0) -- (1.35,0);
+    \node[enc,minimum width=1.5cm,minimum height=1.0cm,font=\small\bfseries] (enc) at (1.85,0) {$h_\phi$};
+    % ---- step 2: two heads ----
+    \begin{scope}[visible on=<2->]
+      \node[param,minimum width=0.75cm,minimum height=0.5cm,font=\small] (mu) at (3.5,0.52) {$\bm{\mu}$};
+      \node[param,minimum width=0.75cm,minimum height=0.5cm,draw=slate,font=\small] (sg) at (3.5,-0.52) {$\bm{\sigma}$};
+      \draw[fwd] (enc.east) ++(0,0.2) -- (mu.west);
+      \draw[fwd] (enc.east) ++(0,-0.2) -- (sg.west);
+    \end{scope}
+    % ---- step 3: noise comes in from outside and z is assembled ----
+    \begin{scope}[visible on=<3->]
+      \node[op,inner sep=1pt,minimum size=0.4cm] (tim) at (4.9,-0.52) {\scriptsize$\odot$};
+      \node[op,minimum size=0.4cm] (plus) at (5.9,0) {\scriptsize$+$};
+      \draw[fwd] (sg.east) -- (tim.west);
+      \draw[fwd] (mu.east) -| (5.9,0.52) -- (plus.north);
+      \draw[fwd] (tim.east) -| (5.9,-0.52) -- (plus.south);
+      \node[font=\scriptsize,text=slate,anchor=north] at (4.9,-0.95) {$\epsilon$};
+      \draw[fwd,dashed] (4.9,-0.88) -- (tim.south);
+      \node[circle,fill=navy!8,draw=navy,line width=0.8pt,text=navy,minimum size=0.62cm,font=\small] (z) at (7.0,0) {$z$};
+      \draw[fwd] (plus.east) -- (z.west);
+    \end{scope}
+    % ---- step 4: decoder gives the image back ----
+    \begin{scope}[visible on=<4->]
+      \node[dec,minimum width=1.5cm,minimum height=1.0cm,font=\small\bfseries] (dec) at (8.5,0) {$f_\theta$};
+      \draw[fwd] (z.east) -- (dec.west);
+      \begin{scope}[shift={(9.5,-0.6)}]
+        \digitgr{0.12}
+        \node[lbl,font=\scriptsize] at (0.42,-0.32) {$\hat{x}$};
+      \end{scope}
+      \draw[fwd] (dec.east) -- (9.45,0);
+    \end{scope}
+    % ---- step 5: the two loss terms and their sum ----
+    \begin{scope}[visible on=<5->]
+      \node[rectangle,rounded corners=3pt,draw=teal,line width=0.9pt,fill=teal!8,text=teal!70!black,
+            font=\scriptsize\bfseries,inner sep=4pt] (lr) at (11.75,0.75) {$\mathcal{L}_{\text{recon}}$};
+      \draw[fwd,draw=teal] (10.45,0.3) -- (lr.west);
+      \node[rectangle,rounded corners=3pt,draw=steel,line width=0.9pt,fill=steel!8,text=navy,
+            font=\scriptsize\bfseries,inner sep=4pt] (lk) at (11.75,-0.75) {$\mathcal{L}_{\text{KL}}$};
+      \draw[fwd,draw=steel] (3.5,-1.15) -- (3.5,-1.5) -- (11.0,-1.5) -- (lk.south);
+      \node[rectangle,rounded corners=3pt,draw=navy,line width=1.0pt,fill=navy!7,text=navy,
+            font=\small\bfseries,inner sep=4pt] (lt) at (13.3,0) {$\mathcal{L}$};
+      \draw[fwd,draw=navy] (lr.east) -| (lt.north);
+      \draw[fwd,draw=navy] (lk.east) -| (lt.south);
+    \end{scope}
+    % ---- step 6: one backward pass ----
+    \begin{scope}[visible on=<6->]
+      \draw[grad] (13.3,-1.1) -- (13.3,-2.0) -- (1.85,-2.0) -- (enc.south);
+      \node[anchor=north,font=\scriptsize,text=navy] at (6.6,-2.14)
+           {one backward pass updates $\phi$ \emph{and} $\theta$ \textemdash\ it flows \textbf{through} $\epsilon$};
+    \end{scope}
+  \end{scope}
+  \node[anchor=north west,note,text width=13.0cm,visible on=<6->] at (1.6,2.35)
+       {That is the entire training loop: one forward pass, one loss with two terms, one backward pass
+        \textemdash\ an ordinary autoencoder plus $\epsilon$.};
+\end{canvas}
+\end{frame}
+
+% =================================================================
+%  PAGE 11 — what training looks like, and the hand-off
+% =================================================================
+\begin{frame}{What Training Looks Like}
+\begin{canvas}
+  % ---------- training loss plot ----------
+  \begin{scope}[shift={(1.75,2.55)}]
+    \draw[slate!60,line width=0.6pt,->] (0,0) -- (6.6,0) node[anchor=north east,font=\scriptsize,text=slate] {epochs};
+    \draw[slate!60,line width=0.6pt,->] (0,0) -- (0,3.05);
+    \node[anchor=south,font=\scriptsize,text=slate,rotate=90] at (-0.26,1.4) {loss};
+    \begin{scope}[yscale=0.8]
+      \draw[navy,line width=1.0pt] (0,3.3) -- (0.6,2.4) -- (1.2,1.85) -- (1.8,1.5) -- (2.4,1.28)
+            -- (3,1.12) -- (3.6,1.02) -- (4.2,0.95) -- (4.8,0.9) -- (5.4,0.87) -- (6,0.85);
+      \begin{scope}[visible on=<2->]
+        \draw[teal,line width=0.8pt,dash pattern=on 3pt off 2pt]
+              (0,3.15) -- (0.6,1.95) -- (1.2,1.3) -- (1.8,0.95) -- (2.4,0.76)
+            -- (3,0.64) -- (3.6,0.57) -- (4.2,0.52) -- (4.8,0.48) -- (5.4,0.46) -- (6,0.45);
+        \draw[steel,line width=0.8pt,dash pattern=on 1.5pt off 1.5pt]
+              (0,0.15) -- (0.6,0.55) -- (1.2,0.62) -- (1.8,0.58) -- (2.4,0.52)
+            -- (3,0.48) -- (3.6,0.45) -- (4.2,0.43) -- (4.8,0.42) -- (5.4,0.41) -- (6,0.4);
+      \end{scope}
+    \end{scope}
+    % legend, tucked into the empty top-right of the plot
+    \draw[navy,line width=1.0pt] (4.30,2.72) -- (4.70,2.72);
+    \node[anchor=west,font=\scriptsize,text=navy] at (4.80,2.72) {total};
+    \begin{scope}[visible on=<2->]
+      \draw[teal,line width=0.8pt,dash pattern=on 3pt off 2pt] (4.30,2.38) -- (4.70,2.38);
+      \node[anchor=west,font=\scriptsize,text=teal] at (4.80,2.38) {recon};
+      \draw[steel,line width=0.8pt,dash pattern=on 1.5pt off 1.5pt] (4.30,2.04) -- (4.70,2.04);
+      \node[anchor=west,font=\scriptsize,text=steel] at (4.80,2.04) {KL};
+    \end{scope}
+  \end{scope}
+  \node[anchor=north west,note,text width=7.0cm,font=\scriptsize,visible on=<2->] at (1.55,2.15)
+       {Reconstruction falls fast; the KL term rises a little at first \textemdash\ the two are trading against
+        each other until they settle.};
+  % ---------- summary + hand-off ----------
+  \node[keybox,anchor=north west,text width=5.5cm,align=left,font=\footnotesize,visible on=<3->] at (9.2,6.40)
+       {\textbf{\textcolor{navy}{Part 2 in three lines}}
+        \\[5pt] $q_\phi(z\mid x)=\mathcal{N}(\bm{\mu},\text{diag}\,\bm{\sigma}^2)$
+        \\[4pt] $z=\bm{\mu}+\bm{\sigma}\odot\epsilon$
+        \\[4pt] $\mathcal{L}=\mathcal{L}_{\text{recon}}+\mathcal{L}_{\text{KL}}=-\,\text{ELBO}$};
+  \begin{scope}[visible on=<4->]
+    \fill[navy!6,rounded corners=4pt] (9.2,2.30) rectangle (15.0,3.00);
+    \draw[navy,line width=0.8pt,rounded corners=4pt] (9.2,2.30) rectangle (15.0,3.00);
+    \node[anchor=center,font=\scriptsize,text=ink] at (12.1,2.65)
+      {Over to \textbf{\textcolor{navy}{Member 3}}: what a VAE can \emph{do}.};
+  \end{scope}
+\end{canvas}
+\end{frame}
+
+\end{document}
