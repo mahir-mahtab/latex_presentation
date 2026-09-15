@@ -459,10 +459,10 @@
   \node[anchor=north west,note,text width=3.0cm,visible on=<1-3>] at (11.9,5.95)
        {At $z_a$, the decoder draws a \textbf{4}.};
   \node[anchor=north west,note,text width=3.0cm,visible on=<2-3>] at (11.9,4.7)
-       {Now slide $z$ along the line towards $z_b$ \dots};
+       {Now slide $z$ along the line to~$z_b$\,\dots};
   \node[keybox,anchor=north west,text width=2.75cm,align=left,font=\footnotesize,visible on=<4>] at (11.9,6.05)
        {Every step decodes to a \textbf{real-looking} digit.
-        \\[4pt] Remember the \textbf{gaps} from Part 1? The KL term filled them.};
+        \\[4pt] Remember the \textbf{gaps} from Part~1? The KL term filled them.};
   % ---------- filmstrip ----------
   \begin{scope}[visible on=<3->]
     \node[anchor=west,font=\scriptsize,text=slate] at (1.15,1.88) {decoded at each stop:};
@@ -501,8 +501,8 @@
   \draw[fwd] (2.92,6.3) -- (3.3,6.3);
   \foreach \d/\xx in {3b/3.6, 8b/4.1, 1/4.6}
     {\mthumb{\xx,6.3}{0.42}{mnist_\d}}
-  \node[font=\footnotesize,text=slate] at (5.02,6.3) {\dots};
-  \node[anchor=west,font=\scriptsize,text=slate] at (5.4,6.3) {random digit};
+  \node[font=\footnotesize,text=slate] at (5.12,6.3) {\dots};
+  \node[anchor=west,font=\scriptsize,text=slate] at (5.5,6.3) {random digit};
   % ---------- step 2: the fix, boxed ----------
   \begin{scope}[visible on=<2->]
     \node[rectangle,rounded corners=4pt,draw=teal,line width=0.8pt,fill=teal!6,anchor=south west,
@@ -546,17 +546,17 @@
     \node[lbl,text=ink] at (12.95,3.5) {$\hat{x}$};
   \end{scope}
   % labels under the blocks
-  \node[anchor=north,font=\scriptsize,text=steel,visible on=<3->] at (3.85,3.13) {sees the image \emph{and} its label};
-  \node[anchor=north,font=\scriptsize,text=teal!80!black,visible on=<3->] at (10.9,3.13) {draws the digit $y$ asks for};
+  \node[anchor=north,font=\scriptsize,text=steel,visible on=<3->] at (3.85,2.9) {sees the image \emph{and} its label};
+  \node[anchor=north,font=\scriptsize,text=teal!80!black,visible on=<3->] at (10.9,2.9) {draws the digit $y$ asks for};
   % ---------- step 4: the intuition ----------
-  \node[mathbox,anchor=south west,text width=7.9cm,minimum height=1.3cm,align=left,font=\footnotesize,visible on=<4->] at (1.1,0.98)
+  \node[mathbox,anchor=south west,text width=5.2cm,minimum height=1.3cm,align=left,font=\footnotesize,visible on=<4->] at (1.1,0.98)
        {The label $y$ says \textbf{\textcolor{teal!80!black}{which}} digit.
         \\[2pt] So $z$ only stores \textbf{\textcolor{navy}{how}} it is written.};
   % ---------- step 5: the payoff ----------
   \begin{scope}[visible on=<5->]
-    \node[keybox,anchor=south west,text width=3.3cm,minimum height=1.3cm,align=left,font=\footnotesize] at (9.45,0.98)
+    \node[keybox,anchor=south west,text width=3.3cm,minimum height=1.3cm,align=left,font=\footnotesize] at (8.1,0.98)
          {$y=7$: \textbf{always a 7}, only the \emph{style} varies.};
-    \foreach \f/\xx in {7_l/13.55, 7_m/14.05, 7_r/14.55}
+    \foreach \f/\xx in {7_l/12.35, 7_m/12.9, 7_r/13.45}
       {\mthumb{\xx,1.63}{0.48}{mnist_\f}}
   \end{scope}
 \end{canvas}
@@ -615,7 +615,7 @@
     \unet{7.44}{3.0}
     \draw[navy,line width=0.7pt,->,>={Stealth[length=1.6mm]}] (7.84,3.42) .. controls (7.84,3.95) and (7.04,3.95) .. (7.04,3.42);
     \node[anchor=west,font=\scriptsize,text=navy] at (7.98,3.78) {$\times 50$};
-    \node[chip,draw=slate!70,text=ink,font=\scriptsize,inner ysep=2pt] (prompt) at (7.44,1.72) {``a smiling face''};
+    \node[chip,draw=slate!70,text=ink,font=\scriptsize,inner ysep=2pt] (prompt) at (7.44,1.55) {``a smiling face''};
     \draw[fwd] (prompt.north) -- (7.44,2.58);
     \draw[fwd] (8.06,3.0) -- (8.59,3.0);
     \begin{scope}[shift={(8.59,2.5)},scale=1.4286] \lgrid{0}{11} \end{scope}
@@ -692,59 +692,13 @@
 \end{frame}
 
 % =================================================================
-%  CLOSING SLIDE — title-slide style
+%  CLOSING SLIDE — just "Thank you"
 % =================================================================
 {
-\setbeamertemplate{background}{}
 \setbeamertemplate{footline}{}
 \begin{frame}[plain]
 \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
-  \clip (0,0) rectangle (16,9);
-  \stripeTR{11.6}{0.55}{navy}
-  \stripeTR{12.45}{0.95}{sky}
-  \stripeTR{13.7}{0.14}{teal}
-  \stripeTR{14.15}{0.75}{steel}
-  \stripeTR{15.2}{0.3}{navy}
-  \stripeBL{3.9}{0.6}{navy}
-  \stripeBL{3.05}{0.9}{sky}
-  \stripeBL{2.65}{0.14}{teal}
-  \stripeBL{1.85}{0.6}{steel}
-  \foreach \c [count=\i] in {navy,sky,teal}{
-    \fill[\c] (0.35+0.62*\i,8.2) circle (0.22);
-    \fill[\c] (12.9+0.62*\i,0.75) circle (0.22);
-  }
-  \coordinate (C) at (12.35,4.6);
-  \fill[white] (C) circle (2.72);
-  \begin{scope}
-    \clip (C) circle (2.55);
-    \shade[inner color=steel,outer color=navy] (C) circle (2.6);
-    \foreach \r in {0.5,1.0,...,2.5}
-      \draw[white,opacity=0.10] (C) circle (\r);
-    \draw[white,opacity=0.18] ($(C)+(-2.6,0)$) -- ++(5.2,0) ($(C)+(0,-2.6)$) -- ++(0,5.2);
-    \pgfmathsetseed{7}
-    \foreach \mx/\my/\col in {-0.8/0.6/teal!55!white, 0.9/0.4/sky, 0.0/-0.9/white}{
-      \foreach \k in {1,...,55}{
-        \pgfmathsetmacro\rr{0.42*sqrt(-2*ln(max(rnd,0.02)))}
-        \pgfmathsetmacro\tt{360*rnd}
-        \fill[\col,opacity=0.85] ($(C)+(\mx,\my)+(\tt:\rr)$) circle (0.035);
-      }
-      \draw[\col,line width=0.8pt,opacity=0.7] ($(C)+(\mx,\my)$) circle (0.55);
-    }
-    % the walk from Part 3, drawn through the medallion
-    \draw[white,line width=0.9pt,dash pattern=on 3pt off 2pt] ($(C)+(-0.8,0.6)$) -- ($(C)+(0.9,0.4)$);
-    \fill[white] ($(C)+(-0.8,0.6)$) circle (0.07) ($(C)+(0.9,0.4)$) circle (0.07);
-  \end{scope}
-  \node[font=\scriptsize,text=steel] at ($(C)+(0,-3.0)$) {compress $\rightarrow$ smooth $\rightarrow$ sample};
-  \node[anchor=west,font=\small\bfseries,text=teal] at (1.0,6.55) {CSE 200 \;\textbullet\; B2 \;\textbullet\; Group 2};
-  \node[anchor=north west,text=navy,align=left,font=\fontsize{30}{33}\fontseries{eb}\selectfont]
-       at (0.9,6.2) {THANK YOU};
-  \fill[teal] (1.0,4.6) rectangle ++(1.6,0.12);
-  \fill[sky]  (2.75,4.6) rectangle ++(0.45,0.12);
-  \node[anchor=west,text=steel,font=\large] at (0.95,4.05) {Questions?};
-  \node[anchor=west,text=ink,font=\small,align=left] at (1.0,3.05)
-       {Generate \,\textbullet\, interpolate \,\textbullet\, condition \,\textbullet\, compress};
-  \node[anchor=west,text=ink,font=\small] at (1.0,2.2) {Presented by \textbf{Member 1} \,\textbullet\, \textbf{Member 2} \,\textbullet\, \textbf{Member 3}};
-  \node[anchor=west,text=teal,font=\footnotesize\itshape] at (1.0,1.72) {Department of CSE, BUET};
+  \node[text=navy,font=\fontsize{30}{33}\fontseries{eb}\selectfont] at (8,4.5) {Thank You};
 \end{tikzpicture}
 \end{frame}
 }

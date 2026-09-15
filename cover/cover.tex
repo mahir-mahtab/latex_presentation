@@ -1,0 +1,50 @@
+% =================================================================
+%  VAE presentation — COVER (simple version of the Part 1 title slide)
+%  Plain centred text on a lightly tinted background. Theme: see ../CLAUDE.md
+%  Build: pdflatex twice.
+% =================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usepackage{plex-serif}
+\renewcommand{\familydefault}{\rmdefault}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+
+% ---------- Palette ----------
+\definecolor{navy}{HTML}{0E237A}
+\definecolor{steel}{HTML}{4D6FAD}
+\definecolor{sky}{HTML}{5DADF5}
+\definecolor{teal}{HTML}{3F8C8A}
+\definecolor{slate}{HTML}{5B6475}
+\definecolor{paper}{HTML}{FBFAF7}
+\definecolor{ink}{HTML}{1C2233}
+
+% ---------- Beamer theme ----------
+\setbeamercolor{background canvas}{bg=paper}
+\setbeamercolor{normal text}{fg=ink}
+\setbeamertemplate{navigation symbols}{}
+
+\title{Variational Autoencoder}
+
+\begin{document}
+
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
+  \clip (0,0) rectangle (16,9);
+
+  % ---------- slight background tint ----------
+  \fill[steel!7] (0,0) rectangle (16,9);
+
+  % ---------- text (centred) ----------
+  \node[font=\small\bfseries,text=teal] at (8,7.1) {CSE 200 \;\textbullet\; B2 \;\textbullet\; Group 2};
+  \node[text=navy,align=center,font=\fontsize{32}{35}\fontseries{eb}\selectfont]
+       at (8,5.5) {VARIATIONAL\\AUTOENCODER};
+  \node[text=slate,font=\small] at (8,3.3) {Presented by};
+  \node[text=ink,font=\small\bfseries] at (8,2.8)
+       {Mahir Mahtab \;\textbullet\; Nusaiba Nehleen Bhuiyan \;\textbullet\; Ramisa Sujana};
+  \node[text=slate,font=\footnotesize\itshape] at (8,2.05) {Department of CSE, BUET};
+\end{tikzpicture}
+\end{frame}
+
+\end{document}
