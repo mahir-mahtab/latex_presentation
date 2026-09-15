@@ -48,9 +48,9 @@ Colour meaning stays consistent across all members' slides:
 `[plain]` frame, no background/footline. Three dots top-left and bottom-right (`navy, sky, teal`), diagonal corner stripes top-right and bottom-left (`navy, sky, teal`-thin, `steel`), big two-line ExtraBold title on the left, a circular TikZ "latent space" medallion on the right. Only the first slide of the whole deck uses this.
 
 ### Content frames
-- **Frame title**: full-width `navy` header band across the top of the frame (via `\setbeamertemplate{frametitle}`), bold white title text left-inset, with a thin rule underneath split `steel` (left) / `sky` (across the remainder) — this mirrors the footline below, just flipped to the top.
+- **Frame title**: full-width flat `navy` header band across the top of the frame (via `\setbeamertemplate{frametitle}`), bold white title text left-inset. No rule/accent line under the band — kept flat and simple.
 - **Background**: plain `paper`, no corner stripe. (The diagonal corner-stripe decoration is used only on the title slide — see above — it would visually clash with the solid header band.)
-- **Footline**: use the finalized senior-inspired information bar from `demo.tex` on every content frame. It has a `navy` band, a thin top rule split into `steel` on the left and `sky` across the remainder, subtle white separators, and white labels: `B2 • GROUP 2` (left), `VARIATIONAL AUTOENCODER` (centre), and `CSE 200` (right). Put `current/total` frame numbers in a small `steel` badge at the far right. The title slide stays plain with no footer. Never use `teal` in the footer.
+- **Footline**: minimal plain-text footer on every content frame — no band, no fill. Small `steel` text left-aligned: `Variational Autoencoder | CSE200` (the `|` in `slate!60`), and `current/total` frame number bold `steel` at the far right. The title slide stays plain with no footer. Never use `teal` in the footer.
 - **Blocks / formula boxes**: `block body` background `slate!7`, rounded, no shadow.
 
 ---
@@ -85,7 +85,7 @@ Decoder: `block, shape border rotate=90, fill=teal!10, draw=teal, text=teal!70!b
 
 ## 4. Beamer overlays (the "animation")
 
-All animation is done with Beamer overlays — **no GIFs, no video, no `animate` package**. Build diagrams step by step with these helpers (in the preamble):
+Most animation is done with Beamer overlays (click-through builds). GIFs via the `animate` package are now allowed where a true continuous motion is worth it (e.g. a latent-space interpolation walk) — see "GIF animations" below. Build step-by-step diagrams with these helpers (in the preamble):
 
 ```latex
 \tikzset{
@@ -100,6 +100,12 @@ All animation is done with Beamer overlays — **no GIFs, no video, no `animate`
 - `focus on=<2>` — thin `teal` outline on the element introduced in that step.
 - Use `\only<n>{...}` for text/formula boxes that replace each other; `\uncover`/`\pause` for bullet lists.
 - Aim for **3–5 steps** per build; one idea per click. Remember each member has only ~3 minutes (~4–6 frames each).
+
+### GIF animations
+- Use `\usepackage{animate}` + `\animategraphics[autoplay,loop,palindrome]{<fps>}{frames/frame_}{01}{NN}` — a sequence of numbered PNG frames in the deck's own palette, not a downloaded/stock GIF.
+- **Playback only works in Adobe Acrobat/Reader** (its JavaScript drives the frame-stepping). It renders as a static first frame everywhere else — Chrome/Edge/browser PDF viewers, Preview, SumatraPDF, Google Slides import, a projector's built-in viewer. Confirm which viewer will actually be used to present before relying on one of these for a live talk.
+- Keep frame count modest (~20-30) and the frame images small — each one is embedded in the PDF individually and bloats file size fast.
+- Still keep the palette flat/muted (no gradients/shadows) inside the frames, matching the rest of the deck.
 
 ---
 
@@ -119,6 +125,6 @@ All animation is done with Beamer overlays — **no GIFs, no video, no `animate`
 
 - No clay, brown, yellow, gold, or wheat colours.
 - No gradients, shadows, or saturated fills in diagrams.
-- No GIFs/embedded video.
+- No downloaded/stock GIFs or video — a GIF used in the deck must be one we generate ourselves, in palette, as numbered PNG frames (see "GIF animations" above).
 - No new colours outside the palette (use tints of existing ones instead).
 - Don't change notation between members.

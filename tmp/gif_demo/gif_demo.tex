@@ -1,0 +1,36 @@
+% =================================================================
+%  GIF-in-PDF technique demo — NOT part of the deck.
+%  Shows \animategraphics driving a latent-space interpolation walk.
+%  IMPORTANT: playback only works in Adobe Acrobat/Reader (see CLAUDE.md).
+% =================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usepackage{plex-serif}
+\renewcommand{\familydefault}{\rmdefault}
+\usepackage[T1]{fontenc}
+\usepackage{animate}
+
+\definecolor{navy}{HTML}{0E237A}
+\definecolor{steel}{HTML}{4D6FAD}
+\definecolor{sky}{HTML}{5DADF5}
+\definecolor{teal}{HTML}{3F8C8A}
+\definecolor{slate}{HTML}{5B6475}
+\definecolor{paper}{HTML}{FBFAF7}
+\definecolor{ink}{HTML}{1C2233}
+
+\setbeamercolor{background canvas}{bg=paper}
+\setbeamercolor{normal text}{fg=ink}
+\setbeamertemplate{navigation symbols}{}
+
+\begin{document}
+
+\begin{frame}{GIF-in-PDF Demo (Adobe Acrobat/Reader only)}
+  \centering
+  \animategraphics[autoplay,loop,palindrome,width=0.85\linewidth]{5}{frames/frame_}{01}{24}
+
+  \vspace{0.4cm}
+  {\footnotesize\color{slate} If this looks like a single static frame, your PDF viewer doesn't run
+   Acrobat's JavaScript player \textemdash\ that's expected outside Acrobat/Reader.}
+\end{frame}
+
+\end{document}

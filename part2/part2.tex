@@ -79,8 +79,6 @@
 \setbeamertemplate{frametitle}{%
   \begin{tikzpicture}[remember picture,overlay,shift={(current page.north west)}]
     \fill[navy] (0,0) rectangle (16,-1.05);
-    \fill[steel] (0,-1.05) rectangle (3.55,-1.11);
-    \fill[sky]  (3.55,-1.05) rectangle (16,-1.11);
     \node[anchor=west,text=white,font=\fontseries{eb}\selectfont\Large] at (0.72,-0.525)
       {\insertframetitle};
   \end{tikzpicture}
@@ -88,21 +86,9 @@
 
 \setbeamertemplate{footline}{%
   \begin{tikzpicture}[remember picture,overlay,shift={(current page.south west)}]
-    % Finalized senior-inspired information bar: footer uses blues only.
-    \fill[navy] (0,0) rectangle (16,0.58);
-    \fill[steel] (0,0.58) rectangle (3.55,0.64);
-    \fill[sky]  (3.55,0.58) rectangle (16,0.64);
-    \draw[white,opacity=0.22,line width=0.45pt]
-      (3.55,0.10) -- (3.55,0.48)
-      (12.55,0.10) -- (12.55,0.48);
-    \node[anchor=west,text=white,font=\scriptsize\bfseries] at (0.72,0.29)
-      {B2 \;\textbullet\; GROUP 2};
-    \node[text=white,font=\scriptsize\bfseries] at (8.05,0.29)
-      {VARIATIONAL AUTOENCODER};
-    \node[anchor=east,text=white,font=\scriptsize] at (14.55,0.29)
-      {CSE 200};
-    \node[fill=steel,rounded corners=1.5pt,inner xsep=4.5pt,inner ysep=1.6pt,
-          text=white,font=\tiny\bfseries] at (15.35,0.29)
+    \node[anchor=west,font=\scriptsize,text=steel] at (0.72,0.32)
+      {Variational Autoencoder \;\textcolor{slate!60}{|}\; CSE200};
+    \node[anchor=east,font=\scriptsize\bfseries,text=steel] at (15.3,0.32)
       {\insertframenumber/\inserttotalframenumber};
   \end{tikzpicture}}
 
